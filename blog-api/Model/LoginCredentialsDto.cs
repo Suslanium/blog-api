@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace blog_api.Models;
+namespace blog_api.Model;
 
 public class LoginCredentialsDto
 {

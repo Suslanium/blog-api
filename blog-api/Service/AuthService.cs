@@ -1,22 +1,19 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using blog_api.Data;
 using blog_api.Data.Models;
-using blog_api.Models;
-using Microsoft.EntityFrameworkCore;
+using blog_api.Model;
+using blog_api.Repository;
 using Microsoft.IdentityModel.Tokens;
 
-namespace blog_api.Services;
+namespace blog_api.Service;
 
-public class AuthService(BlogDbContext dbContext, IConfiguration configuration) : IAuthService
+public class AuthService(IUserRepository userRepository, IConfiguration configuration) : IAuthService
 {
     public async Task<string> Register(UserDto userDto)
     {
-        if (await dbContext.Users.CountAsync(user => user.Email == userDto.Email) > 0)
-        {
+        if (await userRepository.UserExists(userDto.Email))
             throw new ArgumentException("User with the same email already exists");
-        }
 
         var user = new User
         {
@@ -27,29 +24,24 @@ public class AuthService(BlogDbContext dbContext, IConfiguration configuration) 
             PhoneNumber = userDto.PhoneNumber
         };
 
-        dbContext.Users.Add(user);
-        await dbContext.SaveChangesAsync();
+        await userRepository.AddUser(user);
 
         return CreateToken(userDto.Email);
     }
 
     public async Task<string> Login(LoginCredentialsDto loginCredentials)
     {
-        var user = await dbContext.Users.Where(user => user.Email == loginCredentials.Email).FirstAsync();
-
-        if (!BCrypt.Net.BCrypt.Verify(loginCredentials.Password, user.PasswordHash))
-        {
-            throw new ArgumentException("Incorrect password");
-        }
+        if (!await userRepository.CheckUserCredentials(loginCredentials))
+            throw new ArgumentException("Incorrect email or password");
 
         return CreateToken(loginCredentials.Email);
     }
 
     private string CreateToken(string email)
     {
-        List<Claim> claims = new List<Claim>
+        var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Email, email)
+            new(ClaimTypes.Email, email)
         };
 
         var key = new SymmetricSecurityKey(
@@ -59,6 +51,7 @@ public class AuthService(BlogDbContext dbContext, IConfiguration configuration) 
 
         var token = new JwtSecurityToken(
             claims: claims,
+            notBefore: DateTime.Now,
             expires: DateTime.Now.AddHours(1),
             signingCredentials: credentials
         );

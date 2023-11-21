@@ -1,8 +1,8 @@
-﻿using blog_api.Models;
-using blog_api.Services;
+﻿using blog_api.Model;
+using blog_api.Service;
 using Microsoft.AspNetCore.Mvc;
 
-namespace blog_api.Controllers;
+namespace blog_api.Controller;
 
 [ApiController]
 [Route("api/auth")]
@@ -51,7 +51,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         }
         catch (ArgumentException e)
         {
-            if (e.Message == "Incorrect password")
+            if (e.Message == "Incorrect email or password")
             {
                 return BadRequest("Incorrect email or password");
             }
@@ -60,7 +60,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         }
         catch (InvalidOperationException)
         {
-            return BadRequest("Incorrect email or password");
+            return StatusCode(500);
         }
     }
 }

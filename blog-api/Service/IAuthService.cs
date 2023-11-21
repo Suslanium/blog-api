@@ -1,6 +1,6 @@
-﻿using blog_api.Models;
+﻿using blog_api.Model;
 
-namespace blog_api.Services;
+namespace blog_api.Service;
 
 public interface IAuthService
 {

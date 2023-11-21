@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using blog_api.Data;
@@ -11,9 +12,11 @@ using blog_api.Data;
 namespace blog_api.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231120191440_UserChanges")]
+    partial class UserChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,19 +24,6 @@ namespace blog_api.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("blog_api.Data.Models.TokenValidation", b =>
-                {
-                    b.Property<string>("UserEmail")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("MinimalIssuedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("UserEmail");
-
-                    b.ToTable("TokenValidation");
-                });
 
             modelBuilder.Entity("blog_api.Data.Models.User", b =>
                 {

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using blog_api.Data.Models;
 
-namespace blog_api.Models;
+namespace blog_api.Model;
 
 public class UserDto
 {

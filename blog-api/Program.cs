@@ -1,5 +1,6 @@
 using blog_api.Data;
-using blog_api.Services;
+using blog_api.Repository;
+using blog_api.Service;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,7 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

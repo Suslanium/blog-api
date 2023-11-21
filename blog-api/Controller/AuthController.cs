@@ -1,5 +1,7 @@
-﻿using blog_api.Model;
+﻿using System.Security.Claims;
+using blog_api.Model;
 using blog_api.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace blog_api.Controller;
@@ -62,5 +64,21 @@ public class AuthController(IAuthService authService) : ControllerBase
         {
             return StatusCode(500);
         }
+    }
+
+    [HttpPost("logoutAll")]
+    [Authorize]
+    public async Task<IActionResult> LogoutAll()
+    {
+        if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
+        var claims = identity.Claims;
+        var email = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Email)?.Value;
+        if (email == null)
+        {
+            return StatusCode(500);
+        }
+
+        await authService.InvalidateUserTokens(email);
+        return Ok();
     }
 }

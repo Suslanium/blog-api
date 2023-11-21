@@ -7,4 +7,6 @@ public interface IAuthService
     public Task<string> Register(UserDto userDto);
 
     public Task<string> Login(LoginCredentialsDto loginCredentials);
+
+    public Task InvalidateUserTokens(string email);
 }

@@ -24,4 +24,25 @@ public class UserRepository(BlogDbContext dbContext) : IUserRepository
 
         return !(user == null || !BCrypt.Net.BCrypt.Verify(loginCredentials.Password, user.PasswordHash));
     }
+
+    public async Task InvalidateUserTokens(string email)
+    {
+        var tokenEntity = await dbContext.TokenValidation.FindAsync(email);
+        if (tokenEntity != null)
+        {
+            dbContext.TokenValidation.Update(tokenEntity);
+            tokenEntity.MinimalIssuedTime = DateTime.UtcNow;
+        }
+        else
+        {
+            var entity = new TokenValidation
+            {
+                UserEmail = email,
+                MinimalIssuedTime = DateTime.UtcNow
+            };
+            dbContext.TokenValidation.Add(entity);
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
 }

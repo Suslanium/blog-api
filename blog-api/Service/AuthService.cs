@@ -37,6 +37,11 @@ public class AuthService(IUserRepository userRepository, IConfiguration configur
         return CreateToken(loginCredentials.Email);
     }
 
+    public async Task InvalidateUserTokens(string email)
+    {
+        await userRepository.InvalidateUserTokens(email);
+    }
+
     private string CreateToken(string email)
     {
         var claims = new List<Claim>
@@ -51,8 +56,8 @@ public class AuthService(IUserRepository userRepository, IConfiguration configur
 
         var token = new JwtSecurityToken(
             claims: claims,
-            notBefore: DateTime.Now,
-            expires: DateTime.Now.AddHours(1),
+            notBefore: DateTime.UtcNow,
+            expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: credentials
         );
 

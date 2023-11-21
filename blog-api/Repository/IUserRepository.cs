@@ -10,4 +10,6 @@ public interface IUserRepository
     public Task AddUser(User user);
 
     public Task<Boolean> CheckUserCredentials(LoginCredentialsDto loginCredentials);
+
+    public Task InvalidateUserTokens(string email);
 }

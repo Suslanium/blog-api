@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using blog_api.Data;
 using blog_api.Repository;
 using blog_api.Service;
@@ -16,7 +17,11 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<FiasDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("FiasConnection")));
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(jsonOptions =>
+    {
+        jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    }
+);
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();

@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace blog_api.Controller;
 
 [ApiController]
-[Route("api/auth")]
-public class AuthController(IAuthService authService) : ControllerBase
+[Route("api/account")]
+public class UserController(IUserService userService) : ControllerBase
 {
     [HttpPost("register")]
-    public async Task<IActionResult> Register(UserDto request)
+    public async Task<IActionResult> Register(UserRegisterDto request)
     {
         if (!ModelState.IsValid)
         {
@@ -20,7 +20,7 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         try
         {
-            var token = await authService.Register(request);
+            var token = await userService.Register(request);
             return Ok(token);
         }
         catch (ArgumentException e)
@@ -48,7 +48,7 @@ public class AuthController(IAuthService authService) : ControllerBase
 
         try
         {
-            var token = await authService.Login(request);
+            var token = await userService.Login(request);
             return Ok(token);
         }
         catch (ArgumentException e)
@@ -78,7 +78,23 @@ public class AuthController(IAuthService authService) : ControllerBase
             return StatusCode(500);
         }
 
-        await authService.InvalidateUserTokens(email);
+        await userService.InvalidateUserTokens(email);
         return Ok();
+    }
+
+    [HttpGet("profile")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> GetUserProfile()
+    {
+        if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
+        var claims = identity.Claims;
+        var email = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Email)?.Value;
+        if (email == null)
+        {
+            return StatusCode(500);
+        }
+
+        var result = await userService.GetUserProfile(email);
+        return Ok(result);
     }
 }

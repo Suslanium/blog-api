@@ -22,7 +22,7 @@ builder.Services.AddControllers().AddJsonOptions(jsonOptions =>
     }
 );
 builder.Services.AddRazorPages();
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

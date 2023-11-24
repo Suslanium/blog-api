@@ -2,11 +2,13 @@
 
 namespace blog_api.Service;
 
-public interface IAuthService
+public interface IUserService
 {
-    public Task<string> Register(UserDto userDto);
+    public Task<string> Register(UserRegisterDto userRegisterDto);
 
     public Task<string> Login(LoginCredentialsDto loginCredentials);
+
+    public Task<UserDto> GetUserProfile(string email);
 
     public Task InvalidateUserTokens(string email);
 }

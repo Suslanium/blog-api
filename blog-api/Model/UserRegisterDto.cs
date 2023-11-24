@@ -3,21 +3,22 @@ using blog_api.Data.Models;
 
 namespace blog_api.Model;
 
-public class UserDto
+public class UserRegisterDto
 {
-    public required Guid Id { get; set; }
-    
-    public required DateTime CreationTime { get; set; }
-    
+    [MinLength(2)]
     public required string FullName { get; set; }
+    
+    public required Gender Gender { get; set; }
     
     public required DateTime BirthDate { get; set; }
     
-    public required Gender Gender { get; set; }
+    [Phone]
+    public required string PhoneNumber { get; set; }
     
     [EmailAddress]
     public required string Email { get; set; }
     
-    [Phone]
-    public required string PhoneNumber { get; set; }
+    [MinLength(6)]
+    public required string Password { get; set; }
+    
 }

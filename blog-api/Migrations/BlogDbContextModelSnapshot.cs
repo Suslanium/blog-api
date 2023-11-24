@@ -24,13 +24,14 @@ namespace blog_api.Migrations
 
             modelBuilder.Entity("blog_api.Data.Models.TokenValidation", b =>
                 {
-                    b.Property<string>("UserEmail")
-                        .HasColumnType("text");
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("MinimalIssuedTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("UserEmail");
+                    b.HasKey("UserId");
 
                     b.ToTable("TokenValidation");
                 });

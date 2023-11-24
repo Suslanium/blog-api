@@ -58,16 +58,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = async context =>
             {
                 var dbContext = context.HttpContext.RequestServices.GetRequiredService<BlogDbContext>();
-                var email = context.Principal?.Claims
-                    .FirstOrDefault(claim => claim.Type == ClaimTypes.Email)?.Value;
-                if (email == null)
+                var guidString = context.Principal?.Claims
+                    .FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+                if (guidString == null)
                 {
                     context.Fail("Unauthorized");
                     return;
                 }
 
                 var minimalIssuedTime = (await
-                        dbContext.TokenValidation.FirstOrDefaultAsync(validation => validation.UserEmail == email))
+                        dbContext.TokenValidation.FindAsync(Guid.Parse(guidString)))
                     ?.MinimalIssuedTime;
                 if (minimalIssuedTime == null)
                 {

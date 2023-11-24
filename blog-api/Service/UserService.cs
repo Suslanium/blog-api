@@ -27,10 +27,10 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
             BirthDate = userRegisterDto.BirthDate
         };
 
-        dbContext.Users.Add(user);
+        var userEntity = dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
-
-        return CreateToken(userRegisterDto.Email);
+        
+        return CreateToken(userEntity.Entity.Id);
     }
 
     public async Task<string> Login(LoginCredentialsDto loginCredentials)
@@ -40,12 +40,12 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginCredentials.Password, user.PasswordHash))
             throw new ArgumentException("Incorrect email or password");
 
-        return CreateToken(loginCredentials.Email);
+        return CreateToken(user.Id);
     }
 
-    public async Task InvalidateUserTokens(string email)
+    public async Task InvalidateUserTokens(Guid id)
     {
-        var tokenEntity = await dbContext.TokenValidation.FindAsync(email);
+        var tokenEntity = await dbContext.TokenValidation.FindAsync(id);
         if (tokenEntity != null)
         {
             dbContext.TokenValidation.Update(tokenEntity);
@@ -55,7 +55,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         {
             var entity = new TokenValidation
             {
-                UserEmail = email,
+                UserId = id,
                 MinimalIssuedTime = DateTime.UtcNow
             };
             dbContext.TokenValidation.Add(entity);
@@ -64,9 +64,9 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task<UserDto> GetUserProfile(string email)
+    public async Task<UserDto> GetUserProfile(Guid id)
     {
-        var userEntity = await dbContext.Users.FirstOrDefaultAsync(user => user.Email == email);
+        var userEntity = await dbContext.Users.FindAsync(id);
         if (userEntity == null)
         {
             throw new ArgumentException("User does not exist");
@@ -84,11 +84,29 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         };
     }
 
-    private string CreateToken(string email)
+    public async Task EditUserProfile(Guid guid, UserEditDto userEditDto)
+    {
+        var userEntity = await dbContext.Users.FindAsync(guid);
+        if (userEntity == null)
+        {
+            throw new ArgumentException("User does not exist");
+        }
+
+        userEntity.Email = userEditDto.Email;
+        userEntity.FullName = userEditDto.FullName;
+        userEntity.BirthDate = userEditDto.BirthDate;
+        userEntity.Gender = userEditDto.Gender;
+        userEntity.PhoneNumber = userEditDto.PhoneNumber;
+
+        dbContext.Users.Update(userEntity);
+        await dbContext.SaveChangesAsync();
+    }
+
+    private string CreateToken(Guid guid)
     {
         var claims = new List<Claim>
         {
-            new(ClaimTypes.Email, email)
+            new(ClaimTypes.GivenName, guid.ToString())
         };
 
         var key = new SymmetricSecurityKey(

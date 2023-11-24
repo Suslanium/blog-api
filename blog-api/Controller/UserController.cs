@@ -72,13 +72,13 @@ public class UserController(IUserService userService) : ControllerBase
     {
         if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
         var claims = identity.Claims;
-        var email = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Email)?.Value;
-        if (email == null)
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        if (guidString == null)
         {
             return StatusCode(500);
         }
 
-        await userService.InvalidateUserTokens(email);
+        await userService.InvalidateUserTokens(Guid.Parse(guidString));
         return Ok();
     }
 
@@ -88,13 +88,34 @@ public class UserController(IUserService userService) : ControllerBase
     {
         if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
         var claims = identity.Claims;
-        var email = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Email)?.Value;
-        if (email == null)
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        if (guidString == null)
         {
             return StatusCode(500);
         }
 
-        var result = await userService.GetUserProfile(email);
+        var result = await userService.GetUserProfile(Guid.Parse(guidString));
         return Ok(result);
+    }
+
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> EditUserProfile(UserEditDto userEditDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState.ValidationState);
+        }
+        
+        if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        if (guidString == null)
+        {
+            return StatusCode(500);
+        }
+
+        await userService.EditUserProfile(Guid.Parse(guidString), userEditDto);
+        return Ok();
     }
 }

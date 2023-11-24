@@ -8,7 +8,9 @@ public interface IUserService
 
     public Task<string> Login(LoginCredentialsDto loginCredentials);
 
-    public Task<UserDto> GetUserProfile(string email);
+    public Task<UserDto> GetUserProfile(Guid guid);
 
-    public Task InvalidateUserTokens(string email);
+    public Task EditUserProfile(Guid guid, UserEditDto userEditDto);
+
+    public Task InvalidateUserTokens(Guid guid);
 }

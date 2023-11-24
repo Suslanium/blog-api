@@ -1,18 +1,19 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using blog_api.Data;
 using blog_api.Data.Models;
 using blog_api.Model;
-using blog_api.Repository;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace blog_api.Service;
 
-public class AuthService(IUserRepository userRepository, IConfiguration configuration) : IAuthService
+public class AuthService(BlogDbContext dbContext, IConfiguration configuration) : IAuthService
 {
     public async Task<string> Register(UserDto userDto)
     {
-        if (await userRepository.UserExists(userDto.Email))
+        if (await dbContext.Users.CountAsync(user => user.Email == userDto.Email) > 0)
             throw new ArgumentException("User with the same email already exists");
 
         var user = new User
@@ -24,14 +25,17 @@ public class AuthService(IUserRepository userRepository, IConfiguration configur
             PhoneNumber = userDto.PhoneNumber
         };
 
-        await userRepository.AddUser(user);
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
 
         return CreateToken(userDto.Email);
     }
 
     public async Task<string> Login(LoginCredentialsDto loginCredentials)
     {
-        if (!await userRepository.CheckUserCredentials(loginCredentials))
+        var user = await dbContext.Users.Where(user => user.Email == loginCredentials.Email).FirstOrDefaultAsync();
+        
+        if (user == null || !BCrypt.Net.BCrypt.Verify(loginCredentials.Password, user.PasswordHash))
             throw new ArgumentException("Incorrect email or password");
 
         return CreateToken(loginCredentials.Email);
@@ -39,7 +43,23 @@ public class AuthService(IUserRepository userRepository, IConfiguration configur
 
     public async Task InvalidateUserTokens(string email)
     {
-        await userRepository.InvalidateUserTokens(email);
+        var tokenEntity = await dbContext.TokenValidation.FindAsync(email);
+        if (tokenEntity != null)
+        {
+            dbContext.TokenValidation.Update(tokenEntity);
+            tokenEntity.MinimalIssuedTime = DateTime.UtcNow;
+        }
+        else
+        {
+            var entity = new TokenValidation
+            {
+                UserEmail = email,
+                MinimalIssuedTime = DateTime.UtcNow
+            };
+            dbContext.TokenValidation.Add(entity);
+        }
+
+        await dbContext.SaveChangesAsync();
     }
 
     private string CreateToken(string email)

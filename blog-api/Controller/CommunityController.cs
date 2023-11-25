@@ -12,6 +12,55 @@ namespace blog_api.Controller;
 [Authorize]
 public class CommunityController(ICommunityService communityService) : ControllerBase
 {
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<ActionResult<List<CommunityDto>>> GetCommunitiesList()
+    {
+        var result = await communityService.GetCommunityList();
+        return Ok(result);
+    }
+
+    [HttpGet("my")]
+    public async Task<ActionResult<List<CommunityUserDto>>> GetUserCommunitiesList()
+    {
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        var result = await communityService.GetUserCommunities(Guid.Parse(guidString!));
+        return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<CommunityFullDto>> GetCommunityDetails(Guid id)
+    {
+        var result = await communityService.GetCommunityDetails(id);
+        return Ok(result);
+    }
+    
+    [HttpPost("{id}/subscribe")]
+    public async Task<IActionResult> SubscribeToCommunity(Guid id)
+    {
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        await communityService.SubscribeUser(Guid.Parse(guidString!), id);
+        return Ok();
+    }
+
+    [HttpDelete("{id}/unsubscribe")]
+    public async Task<IActionResult> UnsubscribeFromCommunity(Guid id)
+    {
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        await communityService.UnsubscribeUser(Guid.Parse(guidString!), id);
+        return Ok();
+    }
+    
     [HttpGet("{id}/role")]
     public async Task<ActionResult<CommunityRole>> GetUserRole(Guid id)
     {
@@ -27,9 +76,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
     public async Task<IActionResult> CreateCommunity(CommunityCreateEditDto communityDto)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState.ValidationState);
-        }
 
         var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
         var claims = identity.Claims;

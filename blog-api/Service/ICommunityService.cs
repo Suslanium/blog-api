@@ -7,7 +7,7 @@ public interface ICommunityService
 {
     public Task<List<CommunityDto>> GetCommunityList();
 
-    public Task<List<CommunityDto>> GetUserCommunities(Guid userGuid);
+    public Task<List<CommunityUserDto>> GetUserCommunities(Guid userGuid);
 
     public Task<CommunityFullDto> GetCommunityDetails(Guid communityGuid);
 

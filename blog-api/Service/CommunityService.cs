@@ -8,29 +8,108 @@ namespace blog_api.Service;
 
 public class CommunityService(BlogDbContext dbContext) : ICommunityService
 {
+    //TODO add pagination
     public async Task<List<CommunityDto>> GetCommunityList()
     {
-        throw new NotImplementedException();
+        return await dbContext.Communities.Select(community => new CommunityDto
+        {
+            Id = community.Id,
+            CreationTime = community.CreationTime,
+            Name = community.Name,
+            Description = community.Description,
+            IsClosed = community.IsClosed,
+            SubscribersCount = community.Subscribers.Count
+        }).ToListAsync();
     }
 
-    public async Task<List<CommunityDto>> GetUserCommunities(Guid userGuid)
+    //TODO add pagination
+    public async Task<List<CommunityUserDto>> GetUserCommunities(Guid userGuid)
     {
-        throw new NotImplementedException();
+        var user = await dbContext.Users
+            .Include(user => user.Subscriptions)
+            .Include(user => user.SubscribedCommunities)
+            .ThenInclude(community => community.Subscribers)
+            .FirstAsync(user => user.Id == userGuid);
+
+        return user.Subscriptions
+            .Join(user.SubscribedCommunities, subscription => subscription.CommunityId,
+                community => community.Id, (subscription, community) => new CommunityUserDto
+                {
+                    Id = community.Id,
+                    CreationTime = community.CreationTime,
+                    Name = community.Name,
+                    Description = community.Description,
+                    IsClosed = community.IsClosed,
+                    SubscribersCount = community.Subscribers.Count,
+                    UserRole = subscription.CommunityRole
+                }).ToList();
     }
 
     public async Task<CommunityFullDto> GetCommunityDetails(Guid communityGuid)
     {
-        throw new NotImplementedException();
+        var result = await dbContext.Communities.Where(community => community.Id == communityGuid).Select(community =>
+            new CommunityFullDto
+            {
+                Id = community.Id,
+                CreationTime = community.CreationTime,
+                Name = community.Name,
+                Description = community.Description,
+                IsClosed = community.IsClosed,
+                SubscribersCount = community.Subscribers.Count,
+                Administrators = community.Subscriptions
+                    .Where(subscription => subscription.CommunityRole == CommunityRole.Administrator).Join(
+                        community.Subscribers, subscription => subscription.UserId, user => user.Id,
+                        (subscription, user) => new UserDto
+                        {
+                            Id = user.Id,
+                            FullName = user.FullName,
+                            Gender = user.Gender,
+                            Email = user.Email,
+                            PhoneNumber = user.PhoneNumber,
+                            BirthDate = user.BirthDate,
+                            CreationTime = user.CreationTime
+                        }).ToList()
+            }).FirstOrDefaultAsync();
+        
+        if (result == null)
+            throw new BlogApiException(400, "Community with specified id does not exist");
+        
+        return result;
     }
 
     public async Task SubscribeUser(Guid userGuid, Guid communityGuid)
     {
-        throw new NotImplementedException();
+        if (await dbContext.Communities.FindAsync(communityGuid) == null)
+            throw new BlogApiException(400, "Community with specified id does not exist");
+
+        if (await dbContext.Subscriptions.FindAsync(communityGuid, userGuid) != null)
+            throw new BlogApiException(400, "User is already subscribed to specified community");
+
+        dbContext.Subscriptions.Add(new Subscription
+        {
+            UserId = userGuid,
+            CommunityId = communityGuid,
+            CommunityRole = CommunityRole.Subscriber
+        });
+
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task UnsubscribeUser(Guid userGuid, Guid communityGuid)
     {
-        throw new NotImplementedException();
+        if (await dbContext.Communities.FindAsync(communityGuid) == null)
+            throw new BlogApiException(400, "Community with specified id does not exist");
+
+        var subscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
+        if (subscription == null)
+            throw new BlogApiException(400, "User is not subscribed to specified community");
+
+        if (subscription.CommunityRole == CommunityRole.Administrator)
+            throw new BlogApiException(400, "Administrator cannot unsubscribe from the community");
+
+        dbContext.Subscriptions.Remove(subscription);
+
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task<CommunityRole> GetUserRole(Guid userGuid, Guid communityGuid)

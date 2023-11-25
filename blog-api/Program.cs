@@ -22,6 +22,7 @@ builder.Services.AddControllers(options => options.Filters.Add<ExceptionHandling
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<ICommunityService, CommunityService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

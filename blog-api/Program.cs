@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using blog_api.Data;
+using blog_api.Exception;
 using blog_api.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +17,8 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<FiasDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("FiasConnection")));
-builder.Services.AddControllers().AddJsonOptions(jsonOptions =>
-    {
-        jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    }
-);
+builder.Services.AddControllers(options => options.Filters.Add<ExceptionHandlingFilter>())
+    .AddJsonOptions(jsonOptions => { jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAddressService, AddressService>();

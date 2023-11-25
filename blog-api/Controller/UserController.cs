@@ -18,24 +18,8 @@ public class UserController(IUserService userService) : ControllerBase
             return BadRequest(ModelState.ValidationState);
         }
 
-        try
-        {
-            var token = await userService.Register(request);
-            return Ok(token);
-        }
-        catch (ArgumentException e)
-        {
-            if (e.Message == "User with the same email already exists")
-            {
-                return BadRequest("User with the same email already exists");
-            }
-
-            return StatusCode(500);
-        }
-        catch (InvalidOperationException)
-        {
-            return StatusCode(500);
-        }
+        var token = await userService.Register(request);
+        return Ok(token);
     }
 
     [HttpPost("login")]
@@ -46,39 +30,19 @@ public class UserController(IUserService userService) : ControllerBase
             return BadRequest(ModelState.ValidationState);
         }
 
-        try
-        {
-            var token = await userService.Login(request);
-            return Ok(token);
-        }
-        catch (ArgumentException e)
-        {
-            if (e.Message == "Incorrect email or password")
-            {
-                return BadRequest("Incorrect email or password");
-            }
-
-            return StatusCode(500);
-        }
-        catch (InvalidOperationException)
-        {
-            return StatusCode(500);
-        }
+        var token = await userService.Login(request);
+        return Ok(token);
     }
 
     [HttpPost("logoutAll")]
     [Authorize]
     public async Task<IActionResult> LogoutAll()
     {
-        if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
         var claims = identity.Claims;
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
-        if (guidString == null)
-        {
-            return StatusCode(500);
-        }
 
-        await userService.InvalidateUserTokens(Guid.Parse(guidString));
+        await userService.InvalidateUserTokens(Guid.Parse(guidString!));
         return Ok();
     }
 
@@ -86,15 +50,11 @@ public class UserController(IUserService userService) : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserDto>> GetUserProfile()
     {
-        if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
         var claims = identity.Claims;
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
-        if (guidString == null)
-        {
-            return StatusCode(500);
-        }
 
-        var result = await userService.GetUserProfile(Guid.Parse(guidString));
+        var result = await userService.GetUserProfile(Guid.Parse(guidString!));
         return Ok(result);
     }
 
@@ -106,16 +66,12 @@ public class UserController(IUserService userService) : ControllerBase
         {
             return BadRequest(ModelState.ValidationState);
         }
-        
-        if (HttpContext.User.Identity is not ClaimsIdentity identity) return StatusCode(500);
+
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
         var claims = identity.Claims;
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
-        if (guidString == null)
-        {
-            return StatusCode(500);
-        }
 
-        await userService.EditUserProfile(Guid.Parse(guidString), userEditDto);
+        await userService.EditUserProfile(Guid.Parse(guidString!), userEditDto);
         return Ok();
     }
 }

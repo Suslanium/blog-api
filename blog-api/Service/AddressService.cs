@@ -1,4 +1,5 @@
 ﻿using blog_api.Data;
+using blog_api.Exception;
 using blog_api.Model;
 using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
@@ -47,7 +48,7 @@ public class AddressService(FiasDbContext dbContext) : IAddressService
         var foundObjects = await addressObjects.Concat(houses).ToListAsync();
 
         if (foundObjects.Count < 1)
-            throw new ArgumentException("Object with specified guid does not exist");
+            throw new BlogApiException(400, "Object with specified guid does not exist");
         var objectList = (await dbContext.AsAdmHierarchies
                 .Where(hierarchyElement => hierarchyElement.Objectid == foundObjects[0])
                 .OrderByDescending(hierarchyElement => hierarchyElement.Isactive)

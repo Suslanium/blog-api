@@ -12,7 +12,7 @@ public class Post
     
     public required int ReadingTime { get; set; }
     
-    public string ImageUri { get; set; }
+    public string? ImageUri { get; set; }
     
     public Guid? AddressId { get; set; }
     
@@ -26,5 +26,5 @@ public class Post
     
     public List<Tag> Tags { get; } = new();
 
-    public List<User> UsersWhoLiked { get; } = new();
+    public List<LikedPosts> Likes { get; } = new();
 }

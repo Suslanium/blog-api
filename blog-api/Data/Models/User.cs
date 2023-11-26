@@ -24,5 +24,5 @@ public class User
 
     public List<Post> Posts { get; } = new();
 
-    public List<Post> LikedPosts { get; } = new();
+    public List<LikedPosts> LikedPosts { get; } = new();
 }

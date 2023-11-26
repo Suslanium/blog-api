@@ -15,4 +15,6 @@ public class Community
     public List<User> Subscribers { get; } = new();
 
     public List<Subscription> Subscriptions { get; } = new();
+
+    public List<Post> Posts { get; } = new();
 }

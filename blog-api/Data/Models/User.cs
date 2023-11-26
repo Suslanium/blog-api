@@ -18,4 +18,7 @@ public class User
     
     public required string PasswordHash { get; set; }
     
+    public List<Community> SubscribedCommunities { get; } = new();
+
+    public List<Subscription> Subscriptions { get; } = new();
 }

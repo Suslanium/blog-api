@@ -14,9 +14,7 @@ public class UserController(IUserService userService) : ControllerBase
     public async Task<IActionResult> Register(UserRegisterDto request)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState.ValidationState);
-        }
 
         var token = await userService.Register(request);
         return Ok(token);
@@ -26,9 +24,7 @@ public class UserController(IUserService userService) : ControllerBase
     public async Task<IActionResult> Login(LoginCredentialsDto request)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState.ValidationState);
-        }
 
         var token = await userService.Login(request);
         return Ok(token);
@@ -63,9 +59,7 @@ public class UserController(IUserService userService) : ControllerBase
     public async Task<IActionResult> EditUserProfile(UserEditDto userEditDto)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState.ValidationState);
-        }
 
         var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
         var claims = identity.Claims;

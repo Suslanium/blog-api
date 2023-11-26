@@ -69,9 +69,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
     {
         var userEntity = await dbContext.Users.FindAsync(id);
         if (userEntity == null)
-        {
             throw new BlogApiException(400, "User does not exist");
-        }
 
         return new UserDto
         {
@@ -89,9 +87,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
     {
         var userEntity = await dbContext.Users.FindAsync(guid);
         if (userEntity == null)
-        {
             throw new BlogApiException(400, "User does not exist");
-        }
 
         if (userEntity.Email != userEditDto.Email)
         {

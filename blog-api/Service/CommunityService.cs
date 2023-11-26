@@ -28,7 +28,7 @@ public class CommunityService(BlogDbContext dbContext) : ICommunityService
         var user = await dbContext.Users
             .Include(user => user.Subscriptions)
             .Include(user => user.SubscribedCommunities)
-            .ThenInclude(community => community.Subscribers)
+            .ThenInclude(community => community.Subscriptions)
             .FirstAsync(user => user.Id == userGuid);
 
         return user.Subscriptions
@@ -40,7 +40,7 @@ public class CommunityService(BlogDbContext dbContext) : ICommunityService
                     Name = community.Name,
                     Description = community.Description,
                     IsClosed = community.IsClosed,
-                    SubscribersCount = community.Subscribers.Count,
+                    SubscribersCount = community.Subscriptions.Count,
                     UserRole = subscription.CommunityRole
                 }).ToList();
     }

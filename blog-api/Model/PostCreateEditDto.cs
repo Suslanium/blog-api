@@ -2,7 +2,7 @@
 
 namespace blog_api.Model;
 
-public class CreatePostDto
+public class PostCreateEditDto
 {
     [MinLength(5)]
     public required string Title { get; set; }

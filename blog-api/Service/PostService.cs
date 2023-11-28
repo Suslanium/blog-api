@@ -63,6 +63,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         {
             Id = post.Id,
             CreationTime = post.CreationTime,
+            EditedTime = post.EditedTime,
             Title = post.Title,
             Description = post.Description,
             ReadingTime = post.ReadingTime,
@@ -103,6 +104,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             {
                 Id = post.Id,
                 CreationTime = post.CreationTime,
+                EditedTime = post.EditedTime,
                 Title = post.Title,
                 Description = post.Description,
                 ReadingTime = post.ReadingTime,
@@ -122,7 +124,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
                     CreationTime = tag.CreationTime,
                     Name = tag.Name
                 }).ToList()
-            }, 
+            },
             post.Community == null || !post.Community.IsClosed || userId != null &&
             post.Community.Subscriptions.Any(subscription => subscription.UserId == userId)
         )).FirstOrDefaultAsync();
@@ -136,20 +138,20 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         return postInfo.Post;
     }
 
-    public async Task CreateUserPost(Guid userId, CreatePostDto postDto)
+    public async Task CreateUserPost(Guid userId, PostCreateEditDto createDto)
     {
-        if (postDto.AddressId != null)
+        if (createDto.AddressId != null)
         {
             var addrObjectCount =
                 await fiasDbContext.AsAddrObjs.CountAsync(obj =>
-                    obj.Isactual == 1 && obj.Objectguid == postDto.AddressId);
+                    obj.Isactual == 1 && obj.Objectguid == createDto.AddressId);
             var houseCount = await fiasDbContext.AsHouses.CountAsync(house =>
-                house.Isactual == 1 && house.Objectguid == postDto.AddressId);
+                house.Isactual == 1 && house.Objectguid == createDto.AddressId);
             if (houseCount < 1 && addrObjectCount < 1)
-                throw new BlogApiException(400, $"Address with Guid {postDto.AddressId} does not exist");
+                throw new BlogApiException(400, $"Address with Guid {createDto.AddressId} does not exist");
         }
 
-        var tags = postDto.Tags.Select(tagGuid =>
+        var tags = createDto.Tags.Select(tagGuid =>
         {
             var tag = dbContext.Tags.Find(tagGuid);
             if (tag == null)
@@ -160,17 +162,56 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         var post = new Post
         {
             CreationTime = DateTime.UtcNow,
-            Title = postDto.Title,
-            Description = postDto.Description,
-            ReadingTime = postDto.ReadingTime,
-            ImageUri = postDto.ImageUri,
-            AddressId = postDto.AddressId,
+            Title = createDto.Title,
+            Description = createDto.Description,
+            ReadingTime = createDto.ReadingTime,
+            ImageUri = createDto.ImageUri,
+            AddressId = createDto.AddressId,
             AuthorId = userId,
             CommunityId = null
         };
         post.Tags.AddRange(tags);
         dbContext.Posts.Add(post);
 
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task EditPost(Guid userId, Guid postId, PostCreateEditDto editDto)
+    {
+        var post = await dbContext.Posts.Include(postEntity => postEntity.Tags)
+            .FirstOrDefaultAsync(postEntity => postEntity.Id == postId);
+        if (post == null)
+            throw new BlogApiException(400, $"Post with Guid {postId} does not exist");
+
+        bool hasEditAccess;
+        if (post.CommunityId != null)
+            hasEditAccess = await dbContext.Communities.AnyAsync(community =>
+                community.Id == post.CommunityId && community.Subscriptions.Any(subscription =>
+                    subscription.UserId == userId && subscription.CommunityRole == CommunityRole.Administrator));
+        else
+            hasEditAccess = post.AuthorId == userId;
+
+        if (!hasEditAccess)
+            throw new BlogApiException(403, "User doesn't have rights to edit this post");
+
+        var tags = editDto.Tags.Select(tagGuid =>
+        {
+            var tag = dbContext.Tags.Find(tagGuid);
+            if (tag == null)
+                throw new BlogApiException(400, $"Tag with Guid {tagGuid} does not exist");
+            return tag;
+        });
+
+        post.Title = editDto.Title;
+        post.Description = editDto.Description;
+        post.ReadingTime = editDto.ReadingTime;
+        post.EditedTime = DateTime.UtcNow;
+        post.ImageUri = editDto.ImageUri;
+        post.AddressId = editDto.AddressId;
+        post.Tags.Clear();
+        post.Tags.AddRange(tags);
+
+        dbContext.Update(post);
         await dbContext.SaveChangesAsync();
     }
 

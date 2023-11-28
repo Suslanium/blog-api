@@ -9,7 +9,9 @@ public interface IPostService
 
     public Task<PostFullDto> GetPostInfo(Guid? userId, Guid postId);
     
-    public Task CreateUserPost(Guid userId, CreatePostDto postDto);
+    public Task CreateUserPost(Guid userId, PostCreateEditDto createDto);
+
+    public Task EditPost(Guid userId, Guid postId, PostCreateEditDto editDto);
 
     public Task LikePost(Guid userId, Guid postId);
 

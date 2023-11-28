@@ -13,7 +13,7 @@ namespace blog_api.Controller;
 public class PostController(IPostService postService) : ControllerBase
 {
     [HttpPost]
-    public async Task<IActionResult> CreatePost(CreatePostDto postDto)
+    public async Task<IActionResult> CreatePost(PostCreateEditDto createDto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
@@ -22,7 +22,7 @@ public class PostController(IPostService postService) : ControllerBase
         var claims = identity.Claims;
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
 
-        await postService.CreateUserPost(Guid.Parse(guidString!), postDto);
+        await postService.CreateUserPost(Guid.Parse(guidString!), createDto);
         return Ok();
     }
 
@@ -56,6 +56,20 @@ public class PostController(IPostService postService) : ControllerBase
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
         var result = await postService.GetPostInfo(guidString != null ? Guid.Parse(guidString) : null, id);
         return Ok(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> EditPost(Guid id, PostCreateEditDto editDto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState.ValidationState);
+        
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        await postService.EditPost(Guid.Parse(guidString!), id, editDto);
+        return Ok();
     }
 
     [HttpPost("{postId}/like")]

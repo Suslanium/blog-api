@@ -6,6 +6,8 @@ public class PostFullDto
     
     public required DateTime CreationTime { get; set; }
     
+    public DateTime? EditedTime { get; set; }
+    
     public required string Title { get; set; }
     
     public required string Description { get; set; }

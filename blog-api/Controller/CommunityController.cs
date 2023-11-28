@@ -63,7 +63,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
     }
 
     [HttpPost("{id}/post")]
-    public async Task<IActionResult> CreatePost(Guid id, CreatePostDto postDto)
+    public async Task<IActionResult> CreatePost(Guid id, PostCreateEditDto editDto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
@@ -72,7 +72,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
         var claims = identity.Claims;
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
 
-        await communityService.CreatePost(Guid.Parse(guidString!), id, postDto);
+        await communityService.CreatePost(Guid.Parse(guidString!), id, editDto);
         return Ok();
     }
 

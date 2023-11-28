@@ -132,6 +132,7 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
                 {
                     Id = post.Id,
                     CreationTime = post.CreationTime,
+                    EditedTime = post.EditedTime,
                     Title = post.Title,
                     Description = post.Description,
                     ReadingTime = post.ReadingTime,
@@ -166,20 +167,20 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         };
     }
 
-    public async Task CreatePost(Guid userId, Guid communityId, CreatePostDto postDto)
+    public async Task CreatePost(Guid userId, Guid communityId, PostCreateEditDto editDto)
     {
-        if (postDto.AddressId != null)
+        if (editDto.AddressId != null)
         {
             var addrObjectCount =
                 await fiasDbContext.AsAddrObjs.CountAsync(obj =>
-                    obj.Isactual == 1 && obj.Objectguid == postDto.AddressId);
+                    obj.Isactual == 1 && obj.Objectguid == editDto.AddressId);
             var houseCount = await fiasDbContext.AsHouses.CountAsync(house =>
-                house.Isactual == 1 && house.Objectguid == postDto.AddressId);
+                house.Isactual == 1 && house.Objectguid == editDto.AddressId);
             if (houseCount < 1 && addrObjectCount < 1)
-                throw new BlogApiException(400, $"Address with Guid {postDto.AddressId} does not exist");
+                throw new BlogApiException(400, $"Address with Guid {editDto.AddressId} does not exist");
         }
 
-        var tags = postDto.Tags.Select(tagGuid =>
+        var tags = editDto.Tags.Select(tagGuid =>
         {
             var tag = dbContext.Tags.Find(tagGuid);
             if (tag == null)
@@ -199,11 +200,11 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         var post = new Post
             {
                 CreationTime = DateTime.UtcNow,
-                Title = postDto.Title,
-                Description = postDto.Description,
-                ReadingTime = postDto.ReadingTime,
-                ImageUri = postDto.ImageUri,
-                AddressId = postDto.AddressId,
+                Title = editDto.Title,
+                Description = editDto.Description,
+                ReadingTime = editDto.ReadingTime,
+                ImageUri = editDto.ImageUri,
+                AddressId = editDto.AddressId,
                 AuthorId = userId,
                 CommunityId = communityId
             };

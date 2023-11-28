@@ -10,6 +10,7 @@ public class CreatePostDto
     [MinLength(5)]
     public required string Description { get; set; }
     
+    [Range(0, int.MaxValue)]
     public required int ReadingTime { get; set; }
     
     [Url]

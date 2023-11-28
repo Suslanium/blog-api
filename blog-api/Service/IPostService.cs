@@ -6,6 +6,8 @@ public interface IPostService
 {
     public Task<PostPagedListDto> GetPostList(Guid? userId, List<Guid>? tags, string? authorName, int? minReadingTime,
         int? maxReadingTime, SortingOption? sorting, bool onlyUserCommunities, int pageNumber, int pageSize);
+
+    public Task<PostFullDto> GetPostInfo(Guid? userId, Guid postId);
     
     public Task CreateUserPost(Guid userId, CreatePostDto postDto);
 

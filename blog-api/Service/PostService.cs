@@ -8,10 +8,22 @@ namespace blog_api.Service;
 
 public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) : IPostService
 {
+    private record PostInfo(PostFullDto Post, bool UserHasAccessToPost)
+    {
+        public readonly PostFullDto Post = Post;
+        public readonly bool UserHasAccessToPost = UserHasAccessToPost;
+    }
+
     public async Task<PostPagedListDto> GetPostList(Guid? userId, List<Guid>? tags, string? authorName,
         int? minReadingTime, int? maxReadingTime,
         SortingOption? sorting, bool onlyUserCommunities, int pageNumber, int pageSize)
     {
+        if (pageNumber < 1)
+            throw new BlogApiException(400, "Page number should be at least 1");
+
+        if (pageSize < 1)
+            throw new BlogApiException(400, "Page size should be at least 1");
+
         if (userId == null && onlyUserCommunities)
             throw new BlogApiException(401, "Authorization is required to access user communities");
 
@@ -43,13 +55,9 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
                 _ => postsQueryable
             };
         if (onlyUserCommunities)
-        {
-            var userCommunities =
-                (await dbContext.Users.Where(userEntity => userEntity.Id == userId).Select(user => user.Subscriptions)
-                    .FirstAsync()).Select(subscription => subscription.CommunityId).ToList().OfType<Guid?>();
             postsQueryable = postsQueryable.Where(post =>
-                post.CommunityId != null && userCommunities.Contains(post.CommunityId));
-        }
+                post.Community != null &&
+                post.Community.Subscriptions.Any(subscription => subscription.UserId == userId));
 
         var posts = await postsQueryable.Skip(pageSize * (pageNumber - 1)).Take(pageSize).Select(post => new PostDto
         {
@@ -83,9 +91,49 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             {
                 CurrentPage = pageNumber,
                 PageCount = (int)Math.Ceiling((float)await postsQueryable.CountAsync() / pageSize),
-                Size = pageSize
+                Size = posts.Count
             }
         };
+    }
+
+    public async Task<PostFullDto> GetPostInfo(Guid? userId, Guid postId)
+    {
+        var postInfo = await dbContext.Posts.Where(post => post.Id == postId).Select(post => new PostInfo(
+            new PostFullDto
+            {
+                Id = post.Id,
+                CreationTime = post.CreationTime,
+                Title = post.Title,
+                Description = post.Description,
+                ReadingTime = post.ReadingTime,
+                ImageUri = post.ImageUri,
+                AuthorId = post.AuthorId,
+                AuthorName = post.Author.FullName,
+                CommunityId = post.CommunityId,
+                CommunityName = post.Community != null ? post.Community.Name : null,
+                AddressId = post.AddressId,
+                LikesCount = post.Likes.Count,
+                HasLike =
+                    userId != null && post.Likes.Any(like => like.UserId == userId),
+                CommentsCount = 0,
+                Tags = post.Tags.Select(tag => new TagDto
+                {
+                    Id = tag.Id,
+                    CreationTime = tag.CreationTime,
+                    Name = tag.Name
+                }).ToList()
+            }, 
+            post.Community == null || !post.Community.IsClosed || userId != null &&
+            post.Community.Subscriptions.Any(subscription => subscription.UserId == userId)
+        )).FirstOrDefaultAsync();
+
+        if (postInfo == null)
+            throw new BlogApiException(400, $"Post with Guid {postId} does not exist");
+
+        if (!postInfo.UserHasAccessToPost)
+            throw new BlogApiException(403, "User does not have access to the post");
+
+        return postInfo.Post;
     }
 
     public async Task CreateUserPost(Guid userId, CreatePostDto postDto)

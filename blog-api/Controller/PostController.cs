@@ -15,6 +15,9 @@ public class PostController(IPostService postService) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreatePost(CreatePostDto postDto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState.ValidationState);
+        
         var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
         var claims = identity.Claims;
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
@@ -41,6 +44,17 @@ public class PostController(IPostService postService) : ControllerBase
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
         var result = await postService.GetPostList(guidString != null ? Guid.Parse(guidString) : null,
             tags, authorName, minReadingTime, maxReadingTime, sortingOption, onlyUserCommunities, pageNumber, pageSize);
+        return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<PostFullDto>> GetFullPostInfo(Guid id)
+    {
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var result = await postService.GetPostInfo(guidString != null ? Guid.Parse(guidString) : null, id);
         return Ok(result);
     }
 

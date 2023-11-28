@@ -123,6 +123,20 @@ public class CommunityController(ICommunityService communityService) : Controlle
         return Ok();
     }
 
+    [HttpPut("{id}/edit")]
+    public async Task<IActionResult> EditCommunity(Guid id, CommunityCreateEditDto editDto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState.ValidationState);
+
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        await communityService.EditCommunity(Guid.Parse(guidString!), id, editDto);
+        return Ok();
+    }
+
     [HttpPost("{communityId}/admin/add/{userId}")]
     public async Task<IActionResult> AddAdministrator(Guid communityId, Guid userId)
     {

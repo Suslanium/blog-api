@@ -345,4 +345,25 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         });
         await dbContext.SaveChangesAsync();
     }
+
+    public async Task EditCommunity(Guid editorId, Guid communityId, CommunityCreateEditDto editDto)
+    {
+        var community = await dbContext.Communities.FindAsync(communityId);
+
+        if (community == null)
+            throw new BlogApiException(400, $"Community with Guid {communityId} does not exist");
+
+        if (!await dbContext.Communities.AnyAsync(communityEntity =>
+                communityEntity.Id == communityId && communityEntity.Subscriptions
+                    .Any(subscription => subscription.UserId == editorId &&
+                                         subscription.CommunityRole == CommunityRole.Administrator)))
+            throw new BlogApiException(403, "User doesn't have rights to edit this community");
+
+        community.Name = editDto.Name;
+        community.Description = editDto.Description;
+        community.IsClosed = editDto.IsClosed;
+        
+        dbContext.Update(community);
+        await dbContext.SaveChangesAsync();
+    }
 }

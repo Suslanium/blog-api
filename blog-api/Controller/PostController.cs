@@ -24,6 +24,7 @@ public class PostController(IPostService postService) : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<PostPagedListDto>> GetPosts(
         [FromQuery] List<Guid>? tags,
         [FromQuery] string? authorName,

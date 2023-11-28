@@ -17,6 +17,13 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
 
         IQueryable<Post> postsQueryable = dbContext.Posts;
 
+        if (userId == null)
+            postsQueryable = postsQueryable.Where(post => post.Community == null || !post.Community.IsClosed);
+        else
+            postsQueryable = postsQueryable.Where(post =>
+                post.Community == null || !post.Community.IsClosed ||
+                post.Community.Subscriptions.Any(subscription => subscription.UserId == userId));
+
         if (minReadingTime != null)
             postsQueryable = postsQueryable.Where(post => post.ReadingTime >= minReadingTime);
         if (maxReadingTime != null)
@@ -37,7 +44,6 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             };
         if (onlyUserCommunities)
         {
-            //Todo this doesn't work
             var userCommunities =
                 (await dbContext.Users.Where(userEntity => userEntity.Id == userId).Select(user => user.Subscriptions)
                     .FirstAsync()).Select(subscription => subscription.CommunityId).ToList().OfType<Guid?>();
@@ -60,8 +66,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             AddressId = post.AddressId,
             LikesCount = post.Likes.Count,
             HasLike =
-                //TODO this also doesn't work (probably)
-                userId != null && post.Likes.Select(like => like.UserId).ToList().OfType<Guid?>().Contains(userId),
+                userId != null && post.Likes.Any(like => like.UserId == userId),
             CommentsCount = 0,
             Tags = post.Tags.Select(tag => new TagDto
             {

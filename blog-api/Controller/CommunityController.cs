@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using blog_api.Data.Models;
 using blog_api.Model;
 using blog_api.Service;
@@ -38,7 +39,43 @@ public class CommunityController(ICommunityService communityService) : Controlle
         var result = await communityService.GetCommunityDetails(id);
         return Ok(result);
     }
-    
+
+    [HttpGet("{id}/post")]
+    [AllowAnonymous]
+    public async Task<ActionResult<PostPagedListDto>> GetPosts(
+        [FromQuery] List<Guid>? tags,
+        [FromQuery] string? authorName,
+        [FromQuery] int? minReadingTime,
+        [FromQuery] int? maxReadingTime,
+        [FromQuery] SortingOption? sortingOption,
+        [FromQuery] [Required] int pageNumber,
+        [FromQuery] [Required] int pageSize,
+        Guid id
+    )
+    {
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        var result = await communityService.GetCommunityPosts(guidString != null ? Guid.Parse(guidString) : null, id,
+            tags, authorName, minReadingTime, maxReadingTime, sortingOption, pageNumber, pageSize);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/post")]
+    public async Task<IActionResult> CreatePost(Guid id, PostCreateEditDto editDto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState.ValidationState);
+
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        await communityService.CreatePost(Guid.Parse(guidString!), id, editDto);
+        return Ok();
+    }
+
     [HttpPost("{id}/subscribe")]
     public async Task<IActionResult> SubscribeToCommunity(Guid id)
     {
@@ -60,7 +97,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
         await communityService.UnsubscribeUser(Guid.Parse(guidString!), id);
         return Ok();
     }
-    
+
     [HttpGet("{id}/role")]
     public async Task<ActionResult<CommunityRole>> GetUserRole(Guid id)
     {
@@ -71,7 +108,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
         var role = await communityService.GetUserRole(Guid.Parse(guidString!), id);
         return Ok(role);
     }
-    
+
     [HttpPost("create")]
     public async Task<IActionResult> CreateCommunity(CommunityCreateEditDto communityDto)
     {
@@ -83,6 +120,20 @@ public class CommunityController(ICommunityService communityService) : Controlle
         var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
 
         await communityService.CreateCommunity(Guid.Parse(guidString!), communityDto);
+        return Ok();
+    }
+
+    [HttpPut("{id}/edit")]
+    public async Task<IActionResult> EditCommunity(Guid id, CommunityCreateEditDto editDto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState.ValidationState);
+
+        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+        var claims = identity.Claims;
+        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+
+        await communityService.EditCommunity(Guid.Parse(guidString!), id, editDto);
         return Ok();
     }
 

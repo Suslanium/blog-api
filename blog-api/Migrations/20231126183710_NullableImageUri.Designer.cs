@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using blog_api.Data;
@@ -11,9 +12,11 @@ using blog_api.Data;
 namespace blog_api.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231126183710_NullableImageUri")]
+    partial class NullableImageUri
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,6 +38,21 @@ namespace blog_api.Migrations
                     b.HasIndex("TagsId");
 
                     b.ToTable("PostTag");
+                });
+
+            modelBuilder.Entity("PostUser", b =>
+                {
+                    b.Property<Guid>("LikedPostsId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UsersWhoLikedId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("LikedPostsId", "UsersWhoLikedId");
+
+                    b.HasIndex("UsersWhoLikedId");
+
+                    b.ToTable("PostUser");
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.Community", b =>
@@ -62,21 +80,6 @@ namespace blog_api.Migrations
                     b.ToTable("Communities");
                 });
 
-            modelBuilder.Entity("blog_api.Data.Models.LikedPosts", b =>
-                {
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("PostId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("LikedPosts");
-                });
-
             modelBuilder.Entity("blog_api.Data.Models.Post", b =>
                 {
                     b.Property<Guid>("Id")
@@ -98,9 +101,6 @@ namespace blog_api.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("EditedTime")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ImageUri")
                         .HasColumnType("text");
@@ -226,17 +226,17 @@ namespace blog_api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("blog_api.Data.Models.LikedPosts", b =>
+            modelBuilder.Entity("PostUser", b =>
                 {
                     b.HasOne("blog_api.Data.Models.Post", null)
-                        .WithMany("Likes")
-                        .HasForeignKey("PostId")
+                        .WithMany()
+                        .HasForeignKey("LikedPostsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("blog_api.Data.Models.User", null)
-                        .WithMany("LikedPosts")
-                        .HasForeignKey("UserId")
+                        .WithMany()
+                        .HasForeignKey("UsersWhoLikedId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -284,15 +284,8 @@ namespace blog_api.Migrations
                     b.Navigation("Subscriptions");
                 });
 
-            modelBuilder.Entity("blog_api.Data.Models.Post", b =>
-                {
-                    b.Navigation("Likes");
-                });
-
             modelBuilder.Entity("blog_api.Data.Models.User", b =>
                 {
-                    b.Navigation("LikedPosts");
-
                     b.Navigation("Posts");
 
                     b.Navigation("Subscriptions");

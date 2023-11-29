@@ -21,4 +21,8 @@ public class User
     public List<Community> SubscribedCommunities { get; } = new();
 
     public List<Subscription> Subscriptions { get; } = new();
+
+    public List<Post> Posts { get; } = new();
+
+    public List<LikedPosts> LikedPosts { get; } = new();
 }

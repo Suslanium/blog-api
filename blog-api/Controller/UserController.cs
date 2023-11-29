@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using blog_api.Model;
+﻿using blog_api.Model;
 using blog_api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,11 +33,9 @@ public class UserController(IUserService userService) : ControllerBase
     [Authorize]
     public async Task<IActionResult> LogoutAll()
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await userService.InvalidateUserTokens(Guid.Parse(guidString!));
+        await userService.InvalidateUserTokens(userGuid);
         return Ok();
     }
 
@@ -46,11 +43,9 @@ public class UserController(IUserService userService) : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserDto>> GetUserProfile()
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        var result = await userService.GetUserProfile(Guid.Parse(guidString!));
+        var result = await userService.GetUserProfile(userGuid);
         return Ok(result);
     }
 
@@ -61,11 +56,9 @@ public class UserController(IUserService userService) : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
 
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await userService.EditUserProfile(Guid.Parse(guidString!), userEditDto);
+        await userService.EditUserProfile(userGuid, userEditDto);
         return Ok();
     }
 }

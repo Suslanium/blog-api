@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 using blog_api.Data.Models;
 using blog_api.Model;
 using blog_api.Service;
@@ -24,11 +23,9 @@ public class CommunityController(ICommunityService communityService) : Controlle
     [HttpGet("my")]
     public async Task<ActionResult<List<CommunityUserDto>>> GetUserCommunitiesList()
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        var result = await communityService.GetUserCommunities(Guid.Parse(guidString!));
+        var result = await communityService.GetUserCommunities(userGuid);
         return Ok(result);
     }
 
@@ -53,11 +50,9 @@ public class CommunityController(ICommunityService communityService) : Controlle
         Guid id
     )
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid?)HttpContext.Items["UserId"];
 
-        var result = await communityService.GetCommunityPosts(guidString != null ? Guid.Parse(guidString) : null, id,
+        var result = await communityService.GetCommunityPosts(userGuid, id,
             tags, authorName, minReadingTime, maxReadingTime, sortingOption, pageNumber, pageSize);
         return Ok(result);
     }
@@ -68,44 +63,36 @@ public class CommunityController(ICommunityService communityService) : Controlle
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
 
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await communityService.CreatePost(Guid.Parse(guidString!), id, editDto);
+        await communityService.CreatePost(userGuid, id, editDto);
         return Ok();
     }
 
     [HttpPost("{id}/subscribe")]
     public async Task<IActionResult> SubscribeToCommunity(Guid id)
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await communityService.SubscribeUser(Guid.Parse(guidString!), id);
+        await communityService.SubscribeUser(userGuid, id);
         return Ok();
     }
 
     [HttpDelete("{id}/unsubscribe")]
     public async Task<IActionResult> UnsubscribeFromCommunity(Guid id)
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await communityService.UnsubscribeUser(Guid.Parse(guidString!), id);
+        await communityService.UnsubscribeUser(userGuid, id);
         return Ok();
     }
 
     [HttpGet("{id}/role")]
     public async Task<ActionResult<CommunityRole>> GetUserRole(Guid id)
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        var role = await communityService.GetUserRole(Guid.Parse(guidString!), id);
+        var role = await communityService.GetUserRole(userGuid, id);
         return Ok(role);
     }
 
@@ -115,11 +102,9 @@ public class CommunityController(ICommunityService communityService) : Controlle
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
 
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await communityService.CreateCommunity(Guid.Parse(guidString!), communityDto);
+        await communityService.CreateCommunity(userGuid, communityDto);
         return Ok();
     }
 
@@ -129,33 +114,27 @@ public class CommunityController(ICommunityService communityService) : Controlle
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
 
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await communityService.EditCommunity(Guid.Parse(guidString!), id, editDto);
+        await communityService.EditCommunity(userGuid, id, editDto);
         return Ok();
     }
 
     [HttpPost("{communityId}/admin/add/{userId}")]
     public async Task<IActionResult> AddAdministrator(Guid communityId, Guid userId)
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var callerId = (Guid)HttpContext.Items["UserId"]!;
 
-        await communityService.AddAdministrator(Guid.Parse(guidString!), userId, communityId);
+        await communityService.AddAdministrator(callerId, userId, communityId);
         return Ok();
     }
 
     [HttpDelete("{communityId}/admin/remove/{userId}")]
     public async Task<IActionResult> RemoveAdministrator(Guid communityId, Guid userId)
     {
-        var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
-        var claims = identity.Claims;
-        var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+        var callerId = (Guid)HttpContext.Items["UserId"]!;
 
-        await communityService.RemoveAdministrator(Guid.Parse(guidString!), userId, communityId);
+        await communityService.RemoveAdministrator(callerId, userId, communityId);
         return Ok();
     }
 }

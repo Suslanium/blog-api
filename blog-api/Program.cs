@@ -72,6 +72,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     ?.MinimalIssuedTime;
                 if (minimalIssuedTime == null)
                 {
+                    context.HttpContext.Items["UserId"] = Guid.Parse(guidString);
                     return;
                 }
 
@@ -79,7 +80,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (tokenIssuedTime == null || tokenIssuedTime < minimalIssuedTime)
                 {
                     context.Fail("Unauthorized");
+                    return;
                 }
+                context.HttpContext.Items["UserId"] = Guid.Parse(guidString);
             }
         };
     });

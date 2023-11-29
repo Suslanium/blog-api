@@ -25,14 +25,8 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
     //TODO add pagination
     public async Task<List<CommunityUserDto>> GetUserCommunities(Guid userGuid)
     {
-        var user = await dbContext.Users
-            .Include(user => user.Subscriptions)
-            .Include(user => user.SubscribedCommunities)
-            .ThenInclude(community => community.Subscriptions)
-            .FirstAsync(user => user.Id == userGuid);
-
-        return user.Subscriptions
-            .Join(user.SubscribedCommunities, subscription => subscription.CommunityId,
+        var result = await dbContext.Users.Where(userEntity => userEntity.Id == userGuid).Select(userEntity =>
+            userEntity.Subscriptions.Join(userEntity.SubscribedCommunities, subscription => subscription.CommunityId,
                 community => community.Id, (subscription, community) => new CommunityUserDto
                 {
                     Id = community.Id,
@@ -42,7 +36,8 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
                     IsClosed = community.IsClosed,
                     SubscribersCount = community.Subscriptions.Count,
                     UserRole = subscription.CommunityRole
-                }).ToList();
+                })).FirstAsync();
+        return result.ToList();
     }
 
     public async Task<CommunityFullDto> GetCommunityDetails(Guid communityGuid)
@@ -57,18 +52,17 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
                 IsClosed = community.IsClosed,
                 SubscribersCount = community.Subscribers.Count,
                 Administrators = community.Subscriptions
-                    .Where(subscription => subscription.CommunityRole == CommunityRole.Administrator).Join(
-                        community.Subscribers, subscription => subscription.UserId, user => user.Id,
-                        (subscription, user) => new UserDto
-                        {
-                            Id = user.Id,
-                            FullName = user.FullName,
-                            Gender = user.Gender,
-                            Email = user.Email,
-                            PhoneNumber = user.PhoneNumber,
-                            BirthDate = user.BirthDate,
-                            CreationTime = user.CreationTime
-                        }).ToList()
+                    .Where(subscription => subscription.CommunityRole == CommunityRole.Administrator)
+                    .Select(subscription => subscription.User).Select(user => new UserDto
+                    {
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        Gender = user.Gender,
+                        Email = user.Email,
+                        PhoneNumber = user.PhoneNumber,
+                        BirthDate = user.BirthDate,
+                        CreationTime = user.CreationTime
+                    }).ToList()
             }).FirstOrDefaultAsync();
 
         if (result == null)
@@ -104,9 +98,11 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
             .Select(community => community.Posts);
 
         if (minReadingTime != null)
-            postsQueryable = postsQueryable.Select(posts => posts.Where(post => post.ReadingTime >= minReadingTime).ToList());
+            postsQueryable =
+                postsQueryable.Select(posts => posts.Where(post => post.ReadingTime >= minReadingTime).ToList());
         if (maxReadingTime != null)
-            postsQueryable = postsQueryable.Select(posts => posts.Where(post => post.ReadingTime <= maxReadingTime).ToList());
+            postsQueryable =
+                postsQueryable.Select(posts => posts.Where(post => post.ReadingTime <= maxReadingTime).ToList());
         if (tags != null)
             postsQueryable = postsQueryable.Select(posts => posts.Where(post =>
                 post.Tags.Select(tag => tag.Id).Intersect(tags).Count() == tags.Count).ToList());
@@ -196,18 +192,18 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
                     .Any(subscription => subscription.UserId == userId &&
                                          subscription.CommunityRole == CommunityRole.Administrator)))
             throw new BlogApiException(403, "Only administrators of the community can create posts");
-        
+
         var post = new Post
-            {
-                CreationTime = DateTime.UtcNow,
-                Title = editDto.Title,
-                Description = editDto.Description,
-                ReadingTime = editDto.ReadingTime,
-                ImageUri = editDto.ImageUri,
-                AddressId = editDto.AddressId,
-                AuthorId = userId,
-                CommunityId = communityId
-            };
+        {
+            CreationTime = DateTime.UtcNow,
+            Title = editDto.Title,
+            Description = editDto.Description,
+            ReadingTime = editDto.ReadingTime,
+            ImageUri = editDto.ImageUri,
+            AddressId = editDto.AddressId,
+            AuthorId = userId,
+            CommunityId = communityId
+        };
         post.Tags.AddRange(tags);
         dbContext.Posts.Add(post);
 
@@ -362,7 +358,7 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         community.Name = editDto.Name;
         community.Description = editDto.Description;
         community.IsClosed = editDto.IsClosed;
-        
+
         dbContext.Update(community);
         await dbContext.SaveChangesAsync();
     }

@@ -217,43 +217,45 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
 
     public async Task LikePost(Guid userId, Guid postId)
     {
-        var post = await dbContext.Posts.Include(postEntity => postEntity.Likes)
-            .FirstOrDefaultAsync(postEntity => postEntity.Id == postId);
+        var post = await dbContext.Posts.FindAsync(postId);
         if (post == null)
             throw new BlogApiException(400, "Post does not exist");
 
         if (post.CommunityId != null)
         {
-            var community = await dbContext.Communities.Include(communityEntity => communityEntity.Subscriptions)
-                .FirstAsync(communityEntity => communityEntity.Id == post.CommunityId);
-            if (community.IsClosed && !community.Subscriptions.Exists(subscription => subscription.UserId == userId))
+            var canAccessPost = await dbContext.Communities.AnyAsync(community => community.Id == post.CommunityId &&
+                (!community.IsClosed || community.Subscriptions.Any(subscription => subscription.UserId == userId)));
+            if (!canAccessPost)
                 throw new BlogApiException(403, "User doesn't have access to this post");
         }
 
-        if (post.Likes.Exists(like => like.UserId == userId))
+        if (await dbContext.Posts.Where(postEntity => postEntity.Id == postId)
+                .Select(postEntity => postEntity.Likes.Any(like => like.UserId == userId)).FirstAsync())
             throw new BlogApiException(400, "Post is already liked by user");
+
         post.Likes.Add(new LikedPosts { UserId = userId, PostId = postId });
         await dbContext.SaveChangesAsync();
     }
 
     public async Task RemoveLike(Guid userId, Guid postId)
     {
-        var post = await dbContext.Posts.Include(postEntity => postEntity.Likes)
-            .FirstOrDefaultAsync(postEntity => postEntity.Id == postId);
+        var post = await dbContext.Posts.FindAsync(postId);
         if (post == null)
             throw new BlogApiException(400, "Post does not exist");
 
         if (post.CommunityId != null)
         {
-            var community = await dbContext.Communities.Include(communityEntity => communityEntity.Subscriptions)
-                .FirstAsync(communityEntity => communityEntity.Id == post.CommunityId);
-            if (community.IsClosed && !community.Subscriptions.Exists(subscription => subscription.UserId == userId))
+            var canAccessPost = await dbContext.Communities.AnyAsync(community => community.Id == post.CommunityId &&
+                (!community.IsClosed || community.Subscriptions.Any(subscription => subscription.UserId == userId)));
+            if (!canAccessPost)
                 throw new BlogApiException(403, "User doesn't have access to this post");
         }
 
-        var like = post.Likes.FirstOrDefault(like => like.UserId == userId);
+        var like = await dbContext.Posts.Where(postEntity => postEntity.Id == postId)
+            .Select(postEntity => postEntity.Likes.FirstOrDefault(like => like.UserId == userId)).FirstAsync();
         if (like == null)
             throw new BlogApiException(400, "Post is not liked by user");
+        
         post.Likes.Remove(like);
         await dbContext.SaveChangesAsync();
     }

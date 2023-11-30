@@ -2,6 +2,7 @@
 using blog_api.Data.Models;
 using blog_api.Exception;
 using blog_api.Model;
+using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace blog_api.Service;
@@ -9,17 +10,9 @@ namespace blog_api.Service;
 public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbContext) : ICommunityService
 {
     //TODO add pagination
-    public async Task<List<CommunityDto>> GetCommunityList()
+    public Task<List<CommunityDto>> GetCommunityList()
     {
-        return await dbContext.Communities.Select(community => new CommunityDto
-        {
-            Id = community.Id,
-            CreationTime = community.CreationTime,
-            Name = community.Name,
-            Description = community.Description,
-            IsClosed = community.IsClosed,
-            SubscribersCount = community.Subscribers.Count
-        }).ToListAsync();
+        return dbContext.Communities.Select(CommunityMapper.CommunityDtoConverter()).ToListAsync();
     }
 
     //TODO add pagination

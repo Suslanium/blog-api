@@ -5,6 +5,7 @@ using blog_api.Data;
 using blog_api.Data.Models;
 using blog_api.Exception;
 using blog_api.Model;
+using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,16 +18,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         if (await dbContext.Users.CountAsync(user => user.Email == userRegisterDto.Email) > 0)
             throw new BlogApiArgumentException("User with the same email already exists");
 
-        var user = new User
-        {
-            FullName = userRegisterDto.FullName,
-            Email = userRegisterDto.Email,
-            Gender = userRegisterDto.Gender,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterDto.Password),
-            PhoneNumber = userRegisterDto.PhoneNumber,
-            CreationTime = DateTime.UtcNow,
-            BirthDate = userRegisterDto.BirthDate
-        };
+        var user = UserMapper.GetUserEntity(userRegisterDto);
 
         var userEntity = dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
@@ -71,16 +63,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         if (userEntity == null)
             throw new BlogApiArgumentException("User does not exist");
 
-        return new UserDto
-        {
-            Id = userEntity.Id,
-            Email = userEntity.Email,
-            FullName = userEntity.FullName,
-            BirthDate = userEntity.BirthDate,
-            CreationTime = userEntity.CreationTime,
-            Gender = userEntity.Gender,
-            PhoneNumber = userEntity.PhoneNumber
-        };
+        return UserMapper.GetUserDto(userEntity);
     }
 
     public async Task EditUserProfile(Guid guid, UserEditDto userEditDto)

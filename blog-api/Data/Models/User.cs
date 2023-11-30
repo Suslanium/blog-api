@@ -8,9 +8,9 @@ public class User
     
     public required Gender Gender { get; set; }
     
-    public required string PhoneNumber { get; set; }
+    public string? PhoneNumber { get; set; }
     
-    public required DateTime BirthDate { get; set; }
+    public DateTime? BirthDate { get; set; }
     
     public required DateTime CreationTime { get; set; }
     

@@ -10,10 +10,10 @@ public class UserEditDto
     
     public required Gender Gender { get; set; }
     
-    public required DateTime BirthDate { get; set; }
+    public DateTime? BirthDate { get; set; }
     
     [Phone]
-    public required string PhoneNumber { get; set; }
+    public string? PhoneNumber { get; set; }
     
     [EmailAddress]
     public required string Email { get; set; }

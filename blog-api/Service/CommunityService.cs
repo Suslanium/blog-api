@@ -66,7 +66,7 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
             }).FirstOrDefaultAsync();
 
         if (result == null)
-            throw new BlogApiException(400, "Community with specified id does not exist");
+            throw new BlogApiArgumentException("Community with specified id does not exist");
 
         return result;
     }
@@ -76,10 +76,10 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         int? maxReadingTime, SortingOption? sorting, int pageNumber, int pageSize)
     {
         if (pageNumber < 1)
-            throw new BlogApiException(400, "Page number should be at least 1");
+            throw new BlogApiArgumentException("Page number should be at least 1");
 
         if (pageSize < 1)
-            throw new BlogApiException(400, "Page size should be at least 1");
+            throw new BlogApiArgumentException("Page size should be at least 1");
 
         var canAccessPosts = await dbContext.Communities.Where(community => community.Id == communityId).Select(
                 community => !community.IsClosed || userId != null &&
@@ -89,9 +89,9 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         switch (canAccessPosts)
         {
             case null:
-                throw new BlogApiException(400, $"Community with Guid {communityId} does not exist");
+                throw new BlogApiArgumentException($"Community with Guid {communityId} does not exist");
             case false:
-                throw new BlogApiException(403, "Cannot access posts of a closed community");
+                throw new BlogApiSecurityException("Cannot access posts of a closed community");
         }
 
         var postsQueryable = dbContext.Communities.Where(community => community.Id == communityId)
@@ -124,6 +124,7 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
             };
 
         var posts = await postsQueryable.Skip(pageSize * (pageNumber - 1)).Take(pageSize).Select(posts =>
+                //TODO add mapper (materialize the entities before mapping, try to optimize usage of navigation entities (ex. add a LikeCount attribute to Post entity))
                 posts.Select(post => new PostDto
                 {
                     Id = post.Id,
@@ -173,25 +174,25 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
             var houseCount = await fiasDbContext.AsHouses.CountAsync(house =>
                 house.Isactual == 1 && house.Objectguid == editDto.AddressId);
             if (houseCount < 1 && addrObjectCount < 1)
-                throw new BlogApiException(400, $"Address with Guid {editDto.AddressId} does not exist");
+                throw new BlogApiArgumentException($"Address with Guid {editDto.AddressId} does not exist");
         }
 
         var tags = editDto.Tags.Select(tagGuid =>
         {
             var tag = dbContext.Tags.Find(tagGuid);
             if (tag == null)
-                throw new BlogApiException(400, $"Tag with Guid {tagGuid} does not exist");
+                throw new BlogApiArgumentException($"Tag with Guid {tagGuid} does not exist");
             return tag;
         });
 
         if (await dbContext.Communities.FindAsync(communityId) == null)
-            throw new BlogApiException(400, $"Community with Guid {communityId} does not exist");
+            throw new BlogApiArgumentException($"Community with Guid {communityId} does not exist");
 
         if (!await dbContext.Communities.AnyAsync(community =>
                 community.Id == communityId && community.Subscriptions
                     .Any(subscription => subscription.UserId == userId &&
                                          subscription.CommunityRole == CommunityRole.Administrator)))
-            throw new BlogApiException(403, "Only administrators of the community can create posts");
+            throw new BlogApiSecurityException("Only administrators of the community can create posts");
 
         var post = new Post
         {
@@ -213,10 +214,10 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
     public async Task SubscribeUser(Guid userGuid, Guid communityGuid)
     {
         if (await dbContext.Communities.FindAsync(communityGuid) == null)
-            throw new BlogApiException(400, "Community with specified id does not exist");
+            throw new BlogApiArgumentException("Community with specified id does not exist");
 
         if (await dbContext.Subscriptions.FindAsync(communityGuid, userGuid) != null)
-            throw new BlogApiException(400, "User is already subscribed to specified community");
+            throw new BlogApiArgumentException("User is already subscribed to specified community");
 
         dbContext.Subscriptions.Add(new Subscription
         {
@@ -231,14 +232,14 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
     public async Task UnsubscribeUser(Guid userGuid, Guid communityGuid)
     {
         if (await dbContext.Communities.FindAsync(communityGuid) == null)
-            throw new BlogApiException(400, "Community with specified id does not exist");
+            throw new BlogApiArgumentException("Community with specified id does not exist");
 
         var subscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
         if (subscription == null)
-            throw new BlogApiException(400, "User is not subscribed to specified community");
+            throw new BlogApiArgumentException("User is not subscribed to specified community");
 
         if (subscription.CommunityRole == CommunityRole.Administrator)
-            throw new BlogApiException(400, "Administrator cannot unsubscribe from the community");
+            throw new BlogApiArgumentException("Administrator cannot unsubscribe from the community");
 
         dbContext.Subscriptions.Remove(subscription);
 
@@ -248,11 +249,11 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
     public async Task<CommunityRole> GetUserRole(Guid userGuid, Guid communityGuid)
     {
         if (await dbContext.Communities.FindAsync(communityGuid) == null)
-            throw new BlogApiException(400, "Community with specified id does not exist");
+            throw new BlogApiArgumentException("Community with specified id does not exist");
 
         var userSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
         if (userSubscription == null)
-            throw new BlogApiException(400, "User is not subscribed to specified community");
+            throw new BlogApiArgumentException("User is not subscribed to specified community");
 
         return userSubscription.CommunityRole;
     }
@@ -260,17 +261,17 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
     public async Task AddAdministrator(Guid callerGuid, Guid userGuid, Guid communityGuid)
     {
         if (await dbContext.Communities.FindAsync(communityGuid) == null)
-            throw new BlogApiException(400, "Community with specified id does not exist");
+            throw new BlogApiArgumentException("Community with specified id does not exist");
 
         if (await dbContext.Users.FindAsync(userGuid) == null)
-            throw new BlogApiException(400, "User with specified id does not exist");
+            throw new BlogApiArgumentException("User with specified id does not exist");
 
         var callerSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, callerGuid);
         if (callerSubscription is not { CommunityRole: CommunityRole.Administrator })
-            throw new BlogApiException(403, "The calling user does not have administrative rights in this community");
+            throw new BlogApiSecurityException("The calling user does not have administrative rights in this community");
 
         if (callerGuid == userGuid)
-            throw new BlogApiException(400, "User is already an administrator");
+            throw new BlogApiArgumentException("User is already an administrator");
 
         var userSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
         if (userSubscription == null)
@@ -281,7 +282,7 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
                 CommunityRole = CommunityRole.Administrator
             });
         else if (userSubscription.CommunityRole == CommunityRole.Administrator)
-            throw new BlogApiException(400, "User is already an administrator");
+            throw new BlogApiArgumentException("User is already an administrator");
         else
         {
             userSubscription.CommunityRole = CommunityRole.Administrator;
@@ -294,25 +295,25 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
     public async Task RemoveAdministrator(Guid callerGuid, Guid userGuid, Guid communityGuid)
     {
         if (await dbContext.Communities.FindAsync(communityGuid) == null)
-            throw new BlogApiException(400, "Community with specified id does not exist");
+            throw new BlogApiArgumentException("Community with specified id does not exist");
 
         if (await dbContext.Users.FindAsync(userGuid) == null)
-            throw new BlogApiException(400, "User with specified id does not exist");
+            throw new BlogApiArgumentException("User with specified id does not exist");
 
         var callerSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, callerGuid);
         if (callerSubscription is not { CommunityRole: CommunityRole.Administrator })
-            throw new BlogApiException(403, "The calling user does not have administrative rights in this community");
+            throw new BlogApiSecurityException("The calling user does not have administrative rights in this community");
 
         if (await dbContext.Subscriptions.CountAsync(subscription =>
                 subscription.CommunityId == communityGuid &&
                 subscription.CommunityRole == CommunityRole.Administrator) <= 1)
-            throw new BlogApiException(400, "A community must have at least one administrator");
+            throw new BlogApiArgumentException("A community must have at least one administrator");
 
         if (callerGuid != userGuid)
         {
             var userSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
             if (userSubscription is not { CommunityRole: CommunityRole.Administrator })
-                throw new BlogApiException(400, "Specified user is not an admin in this community");
+                throw new BlogApiArgumentException("Specified user is not an admin in this community");
             userSubscription.CommunityRole = CommunityRole.Subscriber;
         }
         else
@@ -347,13 +348,13 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         var community = await dbContext.Communities.FindAsync(communityId);
 
         if (community == null)
-            throw new BlogApiException(400, $"Community with Guid {communityId} does not exist");
+            throw new BlogApiArgumentException($"Community with Guid {communityId} does not exist");
 
         if (!await dbContext.Communities.AnyAsync(communityEntity =>
                 communityEntity.Id == communityId && communityEntity.Subscriptions
                     .Any(subscription => subscription.UserId == editorId &&
                                          subscription.CommunityRole == CommunityRole.Administrator)))
-            throw new BlogApiException(403, "User doesn't have rights to edit this community");
+            throw new BlogApiSecurityException("User doesn't have rights to edit this community");
 
         community.Name = editDto.Name;
         community.Description = editDto.Description;

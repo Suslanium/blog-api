@@ -17,8 +17,10 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<FiasDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("FiasConnection")));
-builder.Services.AddControllers(options => options.Filters.Add<ExceptionHandlingFilter>())
-    .AddJsonOptions(jsonOptions => { jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
+builder.Services.AddControllers().AddJsonOptions(jsonOptions =>
+{
+    jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
@@ -72,7 +74,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     ?.MinimalIssuedTime;
                 if (minimalIssuedTime == null)
                 {
-                    context.HttpContext.Items["UserId"] = Guid.Parse(guidString);
                     return;
                 }
 
@@ -80,15 +81,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (tokenIssuedTime == null || tokenIssuedTime < minimalIssuedTime)
                 {
                     context.Fail("Unauthorized");
-                    return;
                 }
-                context.HttpContext.Items["UserId"] = Guid.Parse(guidString);
             }
         };
     });
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRouting();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>

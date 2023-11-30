@@ -1,4 +1,5 @@
-﻿using blog_api.Model;
+﻿using System.Security.Claims;
+using blog_api.Model;
 using blog_api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,17 @@ namespace blog_api.Controller;
 [Route("api/account")]
 public class UserController(IUserService userService) : ControllerBase
 {
+    private Guid? UserId
+    {
+        get
+        {
+            var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+            var claims = identity.Claims;
+            var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+            return guidString == null ? null : Guid.Parse(guidString);
+        }
+    }
+    
     [HttpPost("register")]
     public async Task<IActionResult> Register(UserRegisterDto request)
     {
@@ -33,9 +45,8 @@ public class UserController(IUserService userService) : ControllerBase
     [Authorize]
     public async Task<IActionResult> LogoutAll()
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await userService.InvalidateUserTokens(userGuid);
+        //TODO remove this and add logout method WITHOUT storing tokens in a raw form in db, but with regular db cleanup
+        await userService.InvalidateUserTokens((Guid)UserId!);
         return Ok();
     }
 
@@ -43,9 +54,7 @@ public class UserController(IUserService userService) : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserDto>> GetUserProfile()
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        var result = await userService.GetUserProfile(userGuid);
+        var result = await userService.GetUserProfile((Guid)UserId!);
         return Ok(result);
     }
 
@@ -56,9 +65,7 @@ public class UserController(IUserService userService) : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
 
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await userService.EditUserProfile(userGuid, userEditDto);
+        await userService.EditUserProfile((Guid)UserId!, userEditDto);
         return Ok();
     }
 }

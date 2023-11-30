@@ -11,7 +11,7 @@ public class TagService(BlogDbContext dbContext) : ITagService
     public async Task CreateTag(TagCreationDto tagCreationDto)
     {
         if (await dbContext.Tags.FirstOrDefaultAsync(tag => tag.Name == tagCreationDto.Name) != null)
-            throw new BlogApiException(400, "Tag with same name already exists");
+            throw new BlogApiArgumentException("Tag with same name already exists");
 
         dbContext.Tags.Add(new Tag
         {

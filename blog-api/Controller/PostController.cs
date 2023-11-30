@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using blog_api.Model;
 using blog_api.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -11,15 +12,24 @@ namespace blog_api.Controller;
 [Authorize]
 public class PostController(IPostService postService) : ControllerBase
 {
+    private Guid? UserId
+    {
+        get
+        {
+            var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+            var claims = identity.Claims;
+            var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+            return guidString == null ? null : Guid.Parse(guidString);
+        }
+    }
+    
     [HttpPost]
     public async Task<IActionResult> CreatePost(PostCreateEditDto createDto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
-        
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await postService.CreateUserPost(userGuid, createDto);
+        await postService.CreateUserPost((Guid)UserId!, createDto);
         return Ok();
     }
 
@@ -36,9 +46,7 @@ public class PostController(IPostService postService) : ControllerBase
         [FromQuery] [Required] int pageSize
     )
     {
-        var userGuid = (Guid?)HttpContext.Items["UserId"];
-        
-        var result = await postService.GetPostList(userGuid,
+        var result = await postService.GetPostList(UserId,
             tags, authorName, minReadingTime, maxReadingTime, sortingOption, onlyUserCommunities, pageNumber, pageSize);
         return Ok(result);
     }
@@ -47,9 +55,7 @@ public class PostController(IPostService postService) : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<PostFullDto>> GetFullPostInfo(Guid id)
     {
-        var userGuid = (Guid?)HttpContext.Items["UserId"];
-        
-        var result = await postService.GetPostInfo(userGuid, id);
+        var result = await postService.GetPostInfo((Guid)UserId!, id);
         return Ok(result);
     }
 
@@ -58,28 +64,22 @@ public class PostController(IPostService postService) : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
-        
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
 
-        await postService.EditPost(userGuid, id, editDto);
+        await postService.EditPost((Guid)UserId!, id, editDto);
         return Ok();
     }
 
     [HttpPost("{postId}/like")]
     public async Task<IActionResult> LikePost(Guid postId)
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await postService.LikePost(userGuid, postId);
+        await postService.LikePost((Guid)UserId!, postId);
         return Ok();
     }
 
     [HttpDelete("{postId}/like")]
     public async Task<IActionResult> DeleteLike(Guid postId)
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await postService.RemoveLike(userGuid, postId);
+        await postService.RemoveLike((Guid)UserId!, postId);
         return Ok();
     }
 }

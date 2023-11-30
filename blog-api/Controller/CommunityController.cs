@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using blog_api.Data.Models;
 using blog_api.Model;
 using blog_api.Service;
@@ -12,6 +13,17 @@ namespace blog_api.Controller;
 [Authorize]
 public class CommunityController(ICommunityService communityService) : ControllerBase
 {
+    private Guid? UserId
+    {
+        get
+        {
+            var identity = (HttpContext.User.Identity as ClaimsIdentity)!;
+            var claims = identity.Claims;
+            var guidString = claims.FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
+            return guidString == null ? null : Guid.Parse(guidString);
+        }
+    }
+
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<List<CommunityDto>>> GetCommunitiesList()
@@ -23,9 +35,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
     [HttpGet("my")]
     public async Task<ActionResult<List<CommunityUserDto>>> GetUserCommunitiesList()
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        var result = await communityService.GetUserCommunities(userGuid);
+        var result = await communityService.GetUserCommunities((Guid)UserId!);
         return Ok(result);
     }
 
@@ -50,9 +60,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
         Guid id
     )
     {
-        var userGuid = (Guid?)HttpContext.Items["UserId"];
-
-        var result = await communityService.GetCommunityPosts(userGuid, id,
+        var result = await communityService.GetCommunityPosts(UserId, id,
             tags, authorName, minReadingTime, maxReadingTime, sortingOption, pageNumber, pageSize);
         return Ok(result);
     }
@@ -62,37 +70,29 @@ public class CommunityController(ICommunityService communityService) : Controlle
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
-
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await communityService.CreatePost(userGuid, id, editDto);
+        
+        await communityService.CreatePost((Guid)UserId!, id, editDto);
         return Ok();
     }
 
     [HttpPost("{id}/subscribe")]
     public async Task<IActionResult> SubscribeToCommunity(Guid id)
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await communityService.SubscribeUser(userGuid, id);
+        await communityService.SubscribeUser((Guid)UserId!, id);
         return Ok();
     }
 
     [HttpDelete("{id}/unsubscribe")]
     public async Task<IActionResult> UnsubscribeFromCommunity(Guid id)
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await communityService.UnsubscribeUser(userGuid, id);
+        await communityService.UnsubscribeUser((Guid)UserId!, id);
         return Ok();
     }
 
     [HttpGet("{id}/role")]
     public async Task<ActionResult<CommunityRole>> GetUserRole(Guid id)
     {
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        var role = await communityService.GetUserRole(userGuid, id);
+        var role = await communityService.GetUserRole((Guid)UserId!, id);
         return Ok(role);
     }
 
@@ -102,9 +102,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
 
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await communityService.CreateCommunity(userGuid, communityDto);
+        await communityService.CreateCommunity((Guid)UserId!, communityDto);
         return Ok();
     }
 
@@ -114,27 +112,21 @@ public class CommunityController(ICommunityService communityService) : Controlle
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
 
-        var userGuid = (Guid)HttpContext.Items["UserId"]!;
-
-        await communityService.EditCommunity(userGuid, id, editDto);
+        await communityService.EditCommunity((Guid)UserId!, id, editDto);
         return Ok();
     }
 
     [HttpPost("{communityId}/admin/add/{userId}")]
     public async Task<IActionResult> AddAdministrator(Guid communityId, Guid userId)
     {
-        var callerId = (Guid)HttpContext.Items["UserId"]!;
-
-        await communityService.AddAdministrator(callerId, userId, communityId);
+        await communityService.AddAdministrator((Guid)UserId!, userId, communityId);
         return Ok();
     }
 
     [HttpDelete("{communityId}/admin/remove/{userId}")]
     public async Task<IActionResult> RemoveAdministrator(Guid communityId, Guid userId)
     {
-        var callerId = (Guid)HttpContext.Items["UserId"]!;
-
-        await communityService.RemoveAdministrator(callerId, userId, communityId);
+        await communityService.RemoveAdministrator((Guid)UserId!, userId, communityId);
         return Ok();
     }
 }

@@ -19,13 +19,13 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         SortingOption? sorting, bool onlyUserCommunities, int pageNumber, int pageSize)
     {
         if (pageNumber < 1)
-            throw new BlogApiException(400, "Page number should be at least 1");
+            throw new BlogApiArgumentException("Page number should be at least 1");
 
         if (pageSize < 1)
-            throw new BlogApiException(400, "Page size should be at least 1");
+            throw new BlogApiArgumentException("Page size should be at least 1");
 
         if (userId == null && onlyUserCommunities)
-            throw new BlogApiException(401, "Authorization is required to access user communities");
+            throw new BlogApiUnauthorizedAccessException("Authorization is required to access user communities");
 
         IQueryable<Post> postsQueryable = dbContext.Posts;
 
@@ -130,10 +130,10 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         )).FirstOrDefaultAsync();
 
         if (postInfo == null)
-            throw new BlogApiException(400, $"Post with Guid {postId} does not exist");
+            throw new BlogApiArgumentException($"Post with Guid {postId} does not exist");
 
         if (!postInfo.UserHasAccessToPost)
-            throw new BlogApiException(403, "User does not have access to the post");
+            throw new BlogApiSecurityException("User does not have access to the post");
 
         return postInfo.Post;
     }
@@ -148,14 +148,14 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             var houseCount = await fiasDbContext.AsHouses.CountAsync(house =>
                 house.Isactual == 1 && house.Objectguid == createDto.AddressId);
             if (houseCount < 1 && addrObjectCount < 1)
-                throw new BlogApiException(400, $"Address with Guid {createDto.AddressId} does not exist");
+                throw new BlogApiArgumentException($"Address with Guid {createDto.AddressId} does not exist");
         }
 
         var tags = createDto.Tags.Select(tagGuid =>
         {
             var tag = dbContext.Tags.Find(tagGuid);
             if (tag == null)
-                throw new BlogApiException(400, $"Tag with Guid {tagGuid} does not exist");
+                throw new BlogApiArgumentException($"Tag with Guid {tagGuid} does not exist");
             return tag;
         });
 
@@ -181,7 +181,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         var post = await dbContext.Posts.Include(postEntity => postEntity.Tags)
             .FirstOrDefaultAsync(postEntity => postEntity.Id == postId);
         if (post == null)
-            throw new BlogApiException(400, $"Post with Guid {postId} does not exist");
+            throw new BlogApiArgumentException($"Post with Guid {postId} does not exist");
 
         bool hasEditAccess;
         if (post.CommunityId != null)
@@ -192,13 +192,13 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             hasEditAccess = post.AuthorId == userId;
 
         if (!hasEditAccess)
-            throw new BlogApiException(403, "User doesn't have rights to edit this post");
+            throw new BlogApiSecurityException("User doesn't have rights to edit this post");
 
         var tags = editDto.Tags.Select(tagGuid =>
         {
             var tag = dbContext.Tags.Find(tagGuid);
             if (tag == null)
-                throw new BlogApiException(400, $"Tag with Guid {tagGuid} does not exist");
+                throw new BlogApiArgumentException($"Tag with Guid {tagGuid} does not exist");
             return tag;
         });
 
@@ -219,19 +219,19 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
     {
         var post = await dbContext.Posts.FindAsync(postId);
         if (post == null)
-            throw new BlogApiException(400, "Post does not exist");
+            throw new BlogApiArgumentException("Post does not exist");
 
         if (post.CommunityId != null)
         {
             var canAccessPost = await dbContext.Communities.AnyAsync(community => community.Id == post.CommunityId &&
                 (!community.IsClosed || community.Subscriptions.Any(subscription => subscription.UserId == userId)));
             if (!canAccessPost)
-                throw new BlogApiException(403, "User doesn't have access to this post");
+                throw new BlogApiSecurityException("User doesn't have access to this post");
         }
 
         if (await dbContext.Posts.Where(postEntity => postEntity.Id == postId)
                 .Select(postEntity => postEntity.Likes.Any(like => like.UserId == userId)).FirstAsync())
-            throw new BlogApiException(400, "Post is already liked by user");
+            throw new BlogApiArgumentException("Post is already liked by user");
 
         post.Likes.Add(new LikedPosts { UserId = userId, PostId = postId });
         await dbContext.SaveChangesAsync();
@@ -241,20 +241,20 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
     {
         var post = await dbContext.Posts.FindAsync(postId);
         if (post == null)
-            throw new BlogApiException(400, "Post does not exist");
+            throw new BlogApiArgumentException("Post does not exist");
 
         if (post.CommunityId != null)
         {
             var canAccessPost = await dbContext.Communities.AnyAsync(community => community.Id == post.CommunityId &&
                 (!community.IsClosed || community.Subscriptions.Any(subscription => subscription.UserId == userId)));
             if (!canAccessPost)
-                throw new BlogApiException(403, "User doesn't have access to this post");
+                throw new BlogApiSecurityException("User doesn't have access to this post");
         }
 
         var like = await dbContext.Posts.Where(postEntity => postEntity.Id == postId)
             .Select(postEntity => postEntity.Likes.FirstOrDefault(like => like.UserId == userId)).FirstAsync();
         if (like == null)
-            throw new BlogApiException(400, "Post is not liked by user");
+            throw new BlogApiArgumentException("Post is not liked by user");
         
         post.Likes.Remove(like);
         await dbContext.SaveChangesAsync();

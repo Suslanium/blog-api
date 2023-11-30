@@ -15,7 +15,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
     public async Task<string> Register(UserRegisterDto userRegisterDto)
     {
         if (await dbContext.Users.CountAsync(user => user.Email == userRegisterDto.Email) > 0)
-            throw new BlogApiException(400, "User with the same email already exists");
+            throw new BlogApiArgumentException("User with the same email already exists");
 
         var user = new User
         {
@@ -39,7 +39,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         var user = await dbContext.Users.Where(user => user.Email == loginCredentials.Email).FirstOrDefaultAsync();
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginCredentials.Password, user.PasswordHash))
-            throw new BlogApiException(400, "Incorrect email or password");
+            throw new BlogApiArgumentException("Incorrect email or password");
 
         return CreateToken(user.Id);
     }
@@ -69,7 +69,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
     {
         var userEntity = await dbContext.Users.FindAsync(id);
         if (userEntity == null)
-            throw new BlogApiException(400, "User does not exist");
+            throw new BlogApiArgumentException("User does not exist");
 
         return new UserDto
         {
@@ -87,12 +87,12 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
     {
         var userEntity = await dbContext.Users.FindAsync(guid);
         if (userEntity == null)
-            throw new BlogApiException(400, "User does not exist");
+            throw new BlogApiArgumentException("User does not exist");
 
         if (userEntity.Email != userEditDto.Email)
         {
             if (await dbContext.Users.CountAsync(user => user.Email == userEditDto.Email) > 0)
-                throw new BlogApiException(400, "User with the same email already exists");
+                throw new BlogApiArgumentException("User with the same email already exists");
         }
 
         userEntity.Email = userEditDto.Email;

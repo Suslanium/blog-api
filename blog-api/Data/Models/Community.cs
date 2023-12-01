@@ -12,6 +12,8 @@ public class Community
     
     public required DateTime CreationTime { get; set; }
 
+    public int SubscribersCount { get; set; }
+    
     public List<User> Subscribers { get; } = new();
 
     public List<Subscription> Subscriptions { get; } = new();

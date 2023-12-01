@@ -30,6 +30,8 @@ public class BlogDbContext : DbContext
             .HasForeignKey(post => post.AuthorId).IsRequired();
         modelBuilder.Entity<Post>().HasOne(post => post.Community).WithMany(community => community.Posts)
             .HasForeignKey(post => post.CommunityId).IsRequired(false);
+        modelBuilder.Entity<Post>().Property(post => post.LikeCount).HasDefaultValue(0);
+        modelBuilder.Entity<Community>().Property(community => community.SubscribersCount).HasDefaultValue(1);
         modelBuilder.Entity<Post>().HasMany(post => post.Tags).WithMany(tag => tag.Posts);
         modelBuilder.Entity<Post>().HasMany<User>().WithMany().UsingEntity<LikedPosts>(
             configureLeft: builder =>

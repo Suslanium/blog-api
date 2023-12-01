@@ -9,59 +9,33 @@ namespace blog_api.Service;
 
 public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbContext) : ICommunityService
 {
-    //TODO add pagination
     public Task<List<CommunityDto>> GetCommunityList()
     {
-        return dbContext.Communities.Select(CommunityMapper.CommunityDtoConverter()).ToListAsync();
+        return dbContext.Communities.Select(community => CommunityMapper.GetCommunityDto(community)).ToListAsync();
     }
-
-    //TODO add pagination
+    
     public async Task<List<CommunityUserDto>> GetUserCommunities(Guid userGuid)
     {
         var result = await dbContext.Users.Where(userEntity => userEntity.Id == userGuid).Select(userEntity =>
-            userEntity.Subscriptions.Join(userEntity.SubscribedCommunities, subscription => subscription.CommunityId,
-                community => community.Id, (subscription, community) => new CommunityUserDto
-                {
-                    Id = community.Id,
-                    CreationTime = community.CreationTime,
-                    Name = community.Name,
-                    Description = community.Description,
-                    IsClosed = community.IsClosed,
-                    SubscribersCount = community.Subscriptions.Count,
-                    UserRole = subscription.CommunityRole
-                })).FirstAsync();
+                userEntity.Subscriptions.Join(userEntity.SubscribedCommunities,
+                    subscription => subscription.CommunityId,
+                    community => community.Id,
+                    (subscription, community) => CommunityMapper.GetCommunityUserDto(community, subscription)))
+            .FirstAsync();
         return result.ToList();
     }
 
     public async Task<CommunityFullDto> GetCommunityDetails(Guid communityGuid)
     {
-        var result = await dbContext.Communities.Where(community => community.Id == communityGuid).Select(community =>
-            new CommunityFullDto
-            {
-                Id = community.Id,
-                CreationTime = community.CreationTime,
-                Name = community.Name,
-                Description = community.Description,
-                IsClosed = community.IsClosed,
-                SubscribersCount = community.Subscribers.Count,
-                Administrators = community.Subscriptions
-                    .Where(subscription => subscription.CommunityRole == CommunityRole.Administrator)
-                    .Select(subscription => subscription.User).Select(user => new UserDto
-                    {
-                        Id = user.Id,
-                        FullName = user.FullName,
-                        Gender = user.Gender,
-                        Email = user.Email,
-                        PhoneNumber = user.PhoneNumber,
-                        BirthDate = user.BirthDate,
-                        CreationTime = user.CreationTime
-                    }).ToList()
-            }).FirstOrDefaultAsync();
+        var result = await dbContext.Communities.Where(community => community.Id == communityGuid).Include(community =>
+                community.Subscriptions.Where(subscription =>
+                    subscription.CommunityRole == CommunityRole.Administrator))
+            .ThenInclude(subscription => subscription.User).FirstOrDefaultAsync();
 
         if (result == null)
             throw new BlogApiArgumentException("Community with specified id does not exist");
 
-        return result;
+        return CommunityMapper.GetFullCommunityDto(result);
     }
 
     public async Task<PostPagedListDto> GetCommunityPosts(Guid? userId, Guid communityId, List<Guid>? tags,
@@ -87,90 +61,54 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
                 throw new BlogApiSecurityException("Cannot access posts of a closed community");
         }
 
-        var postsQueryable = dbContext.Communities.Where(community => community.Id == communityId)
-            .Select(community => community.Posts);
+        var postsQueryable = dbContext.Communities
+            .Where(community => community.Id == communityId)
+            .SelectMany(community => community.Posts);
 
         if (minReadingTime != null)
-            postsQueryable =
-                postsQueryable.Select(posts => posts.Where(post => post.ReadingTime >= minReadingTime).ToList());
+            postsQueryable = postsQueryable.Where(post => post.ReadingTime >= minReadingTime);
         if (maxReadingTime != null)
-            postsQueryable =
-                postsQueryable.Select(posts => posts.Where(post => post.ReadingTime <= maxReadingTime).ToList());
+            postsQueryable = postsQueryable.Where(post => post.ReadingTime <= maxReadingTime);
         if (tags != null)
-            postsQueryable = postsQueryable.Select(posts => posts.Where(post =>
-                post.Tags.Select(tag => tag.Id).Intersect(tags).Count() == tags.Count).ToList());
+            postsQueryable = postsQueryable.Where(post =>
+                post.Tags.Select(tag => tag.Id).Intersect(tags).Count() == tags.Count);
         if (authorName != null)
-            postsQueryable =
-                postsQueryable.Select(posts => posts.Where(post => post.Author.FullName.Contains(authorName)).ToList());
+            postsQueryable = postsQueryable.Where(post => post.Author.FullName.Contains(authorName));
         if (sorting != null)
             postsQueryable = sorting switch
             {
-                SortingOption.CreateDesc => postsQueryable.Select(posts =>
-                    posts.OrderByDescending(post => post.CreationTime).ToList()),
-                SortingOption.CreateAsc => postsQueryable.Select(posts =>
-                    posts.OrderBy(post => post.CreationTime).ToList()),
-                SortingOption.LikeDesc => postsQueryable.Select(posts =>
-                    posts.OrderByDescending(post => post.Likes.Count).ToList()),
-                SortingOption.LikeAsc => postsQueryable.Select(
-                    posts => posts.OrderBy(post => post.Likes.Count).ToList()),
+                SortingOption.CreateDesc => postsQueryable.OrderByDescending(post => post.CreationTime),
+                SortingOption.CreateAsc => postsQueryable.OrderBy(post => post.CreationTime),
+                SortingOption.LikeDesc => postsQueryable.OrderByDescending(post => post.LikeCount),
+                SortingOption.LikeAsc => postsQueryable.OrderBy(post => post.LikeCount),
                 _ => postsQueryable
             };
 
-        var posts = await postsQueryable.Skip(pageSize * (pageNumber - 1)).Take(pageSize).Select(posts =>
-                //TODO add mapper (materialize the entities before mapping, try to optimize usage of navigation entities (ex. add a LikeCount attribute to Post entity))
-                posts.Select(post => new PostDto
-                {
-                    Id = post.Id,
-                    CreationTime = post.CreationTime,
-                    EditedTime = post.EditedTime,
-                    Title = post.Title,
-                    Description = post.Description,
-                    ReadingTime = post.ReadingTime,
-                    ImageUri = post.ImageUri,
-                    AuthorId = post.AuthorId,
-                    AuthorName = post.Author.FullName,
-                    CommunityId = post.CommunityId,
-                    CommunityName = post.Community != null ? post.Community.Name : null,
-                    AddressId = post.AddressId,
-                    LikesCount = post.Likes.Count,
-                    HasLike =
-                        userId != null && post.Likes.Any(like => like.UserId == userId),
-                    CommentsCount = 0,
-                    Tags = post.Tags.Select(tag => new TagDto
-                    {
-                        Id = tag.Id,
-                        CreationTime = tag.CreationTime,
-                        Name = tag.Name
-                    }).ToList()
-                }).ToList())
-            .FirstOrDefaultAsync();
+        var postPageQueryable = postsQueryable.Skip(pageSize * (pageNumber - 1)).Take(pageSize);
+        var likes = await postPageQueryable.Select(post => userId != null && post.Likes.Any(like => like.UserId == userId))
+            .ToListAsync();
+        var postList = await postPageQueryable.Include(post => post.Author).Include(post => post.Community)
+            .Include(post => post.Tags).ToListAsync();
+        var posts = postList.Zip(likes, PostMapper.GetPostDto).ToList();
+        var pageCount = (int)Math.Ceiling((float)await postsQueryable.CountAsync() / pageSize);
 
-        return new PostPagedListDto
-        {
-            Posts = posts ?? new List<PostDto>(),
-            PaginationInfo = new PageInfoDto
-            {
-                CurrentPage = pageNumber,
-                PageCount = (int)Math.Ceiling((float)await postsQueryable.CountAsync() / pageSize),
-                Size = posts?.Count ?? 0
-            }
-        };
+        return PostMapper.GetPostPagedListDto(pageNumber, posts, pageCount);
     }
 
-    public async Task CreatePost(Guid userId, Guid communityId, PostCreateEditDto editDto)
+    public async Task CreatePost(Guid userId, Guid communityId, PostCreateEditDto createDto)
     {
-        if (editDto.AddressId != null)
+        if (createDto.AddressId != null)
         {
             var addrObjectCount =
                 await fiasDbContext.AsAddrObjs.CountAsync(obj =>
-                    obj.Isactual == 1 && obj.Objectguid == editDto.AddressId);
+                    obj.Isactual == 1 && obj.Objectguid == createDto.AddressId);
             var houseCount = await fiasDbContext.AsHouses.CountAsync(house =>
-                house.Isactual == 1 && house.Objectguid == editDto.AddressId);
+                house.Isactual == 1 && house.Objectguid == createDto.AddressId);
             if (houseCount < 1 && addrObjectCount < 1)
-                throw new BlogApiArgumentException($"Address with Guid {editDto.AddressId} does not exist");
+                throw new BlogApiArgumentException($"Address with Guid {createDto.AddressId} does not exist");
         }
 
-        var tags = editDto.Tags.Select(tagGuid =>
+        var tags = createDto.Tags.Select(tagGuid =>
         {
             var tag = dbContext.Tags.Find(tagGuid);
             if (tag == null)
@@ -187,17 +125,7 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
                                          subscription.CommunityRole == CommunityRole.Administrator)))
             throw new BlogApiSecurityException("Only administrators of the community can create posts");
 
-        var post = new Post
-        {
-            CreationTime = DateTime.UtcNow,
-            Title = editDto.Title,
-            Description = editDto.Description,
-            ReadingTime = editDto.ReadingTime,
-            ImageUri = editDto.ImageUri,
-            AddressId = editDto.AddressId,
-            AuthorId = userId,
-            CommunityId = communityId
-        };
+        var post = PostMapper.GetPostEntity(userId, communityId, createDto);
         post.Tags.AddRange(tags);
         dbContext.Posts.Add(post);
 
@@ -206,25 +134,23 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
 
     public async Task SubscribeUser(Guid userGuid, Guid communityGuid)
     {
-        if (await dbContext.Communities.FindAsync(communityGuid) == null)
+        var community = await dbContext.Communities.FindAsync(communityGuid);
+        if (community == null)
             throw new BlogApiArgumentException("Community with specified id does not exist");
 
         if (await dbContext.Subscriptions.FindAsync(communityGuid, userGuid) != null)
             throw new BlogApiArgumentException("User is already subscribed to specified community");
 
-        dbContext.Subscriptions.Add(new Subscription
-        {
-            UserId = userGuid,
-            CommunityId = communityGuid,
-            CommunityRole = CommunityRole.Subscriber
-        });
+        dbContext.Subscriptions.Add(SubscriptionMapper.GetSubscription(userGuid, communityGuid, CommunityRole.Subscriber));
+        community.SubscribersCount++;
 
         await dbContext.SaveChangesAsync();
     }
 
     public async Task UnsubscribeUser(Guid userGuid, Guid communityGuid)
     {
-        if (await dbContext.Communities.FindAsync(communityGuid) == null)
+        var community = await dbContext.Communities.FindAsync(communityGuid);
+        if (community == null)
             throw new BlogApiArgumentException("Community with specified id does not exist");
 
         var subscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
@@ -235,6 +161,7 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
             throw new BlogApiArgumentException("Administrator cannot unsubscribe from the community");
 
         dbContext.Subscriptions.Remove(subscription);
+        community.SubscribersCount--;
 
         await dbContext.SaveChangesAsync();
     }
@@ -253,7 +180,8 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
 
     public async Task AddAdministrator(Guid callerGuid, Guid userGuid, Guid communityGuid)
     {
-        if (await dbContext.Communities.FindAsync(communityGuid) == null)
+        var community = await dbContext.Communities.FindAsync(communityGuid);
+        if (community == null)
             throw new BlogApiArgumentException("Community with specified id does not exist");
 
         if (await dbContext.Users.FindAsync(userGuid) == null)
@@ -261,19 +189,18 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
 
         var callerSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, callerGuid);
         if (callerSubscription is not { CommunityRole: CommunityRole.Administrator })
-            throw new BlogApiSecurityException("The calling user does not have administrative rights in this community");
+            throw new BlogApiSecurityException(
+                "The calling user does not have administrative rights in this community");
 
         if (callerGuid == userGuid)
             throw new BlogApiArgumentException("User is already an administrator");
 
         var userSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
         if (userSubscription == null)
-            dbContext.Subscriptions.Add(new Subscription
-            {
-                UserId = userGuid,
-                CommunityId = communityGuid,
-                CommunityRole = CommunityRole.Administrator
-            });
+        {
+            dbContext.Subscriptions.Add(SubscriptionMapper.GetSubscription(userGuid, communityGuid, CommunityRole.Administrator));
+            community.SubscribersCount++;
+        }
         else if (userSubscription.CommunityRole == CommunityRole.Administrator)
             throw new BlogApiArgumentException("User is already an administrator");
         else
@@ -295,7 +222,8 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
 
         var callerSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, callerGuid);
         if (callerSubscription is not { CommunityRole: CommunityRole.Administrator })
-            throw new BlogApiSecurityException("The calling user does not have administrative rights in this community");
+            throw new BlogApiSecurityException(
+                "The calling user does not have administrative rights in this community");
 
         if (await dbContext.Subscriptions.CountAsync(subscription =>
                 subscription.CommunityId == communityGuid &&
@@ -319,20 +247,9 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
 
     public async Task CreateCommunity(Guid creatorId, CommunityCreateEditDto communityCreateEditDto)
     {
-        var community = new Community
-        {
-            Name = communityCreateEditDto.Name,
-            Description = communityCreateEditDto.Description,
-            CreationTime = DateTime.UtcNow,
-            IsClosed = communityCreateEditDto.IsClosed
-        };
+        var community = CommunityMapper.GetNewCommunity(communityCreateEditDto);
         dbContext.Communities.Add(community);
-        dbContext.Subscriptions.Add(new Subscription
-        {
-            UserId = creatorId,
-            CommunityId = community.Id,
-            CommunityRole = CommunityRole.Administrator
-        });
+        dbContext.Subscriptions.Add(SubscriptionMapper.GetSubscription(creatorId, community.Id, CommunityRole.Administrator));
         await dbContext.SaveChangesAsync();
     }
 

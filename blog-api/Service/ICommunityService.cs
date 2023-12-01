@@ -14,7 +14,7 @@ public interface ICommunityService
     public Task<PostPagedListDto> GetCommunityPosts(Guid? userId, Guid communityId, List<Guid>? tags, string? authorName,
         int? minReadingTime, int? maxReadingTime, SortingOption? sorting, int pageNumber, int pageSize);
     
-    public Task CreatePost(Guid userId, Guid communityId, PostCreateEditDto editDto);
+    public Task CreatePost(Guid userId, Guid communityId, PostCreateEditDto createDto);
 
     public Task SubscribeUser(Guid userGuid, Guid communityGuid);
 

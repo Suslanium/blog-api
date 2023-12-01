@@ -2,16 +2,18 @@
 using blog_api.Data.Models;
 using blog_api.Exception;
 using blog_api.Model;
+using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace blog_api.Service;
 
 public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) : IPostService
 {
-    private record PostInfo(PostFullDto Post, bool UserHasAccessToPost)
+    private record PostInfo(Post Post, bool UserHasAccessToPost, bool HasLike)
     {
-        public readonly PostFullDto Post = Post;
+        public readonly Post Post = Post;
         public readonly bool UserHasAccessToPost = UserHasAccessToPost;
+        public readonly bool HasLike = HasLike;
     }
 
     public async Task<PostPagedListDto> GetPostList(Guid? userId, List<Guid>? tags, string? authorName,
@@ -50,8 +52,8 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             {
                 SortingOption.CreateDesc => postsQueryable.OrderByDescending(post => post.CreationTime),
                 SortingOption.CreateAsc => postsQueryable.OrderBy(post => post.CreationTime),
-                SortingOption.LikeDesc => postsQueryable.OrderByDescending(post => post.Likes.Count),
-                SortingOption.LikeAsc => postsQueryable.OrderBy(post => post.Likes.Count),
+                SortingOption.LikeDesc => postsQueryable.OrderByDescending(post => post.LikeCount),
+                SortingOption.LikeAsc => postsQueryable.OrderBy(post => post.LikeCount),
                 _ => postsQueryable
             };
         if (onlyUserCommunities)
@@ -59,75 +61,30 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
                 post.Community != null &&
                 post.Community.Subscriptions.Any(subscription => subscription.UserId == userId));
 
-        var posts = await postsQueryable.Skip(pageSize * (pageNumber - 1)).Take(pageSize).Select(post => new PostDto
-        {
-            Id = post.Id,
-            CreationTime = post.CreationTime,
-            EditedTime = post.EditedTime,
-            Title = post.Title,
-            Description = post.Description,
-            ReadingTime = post.ReadingTime,
-            ImageUri = post.ImageUri,
-            AuthorId = post.AuthorId,
-            AuthorName = post.Author.FullName,
-            CommunityId = post.CommunityId,
-            CommunityName = post.Community != null ? post.Community.Name : null,
-            AddressId = post.AddressId,
-            LikesCount = post.Likes.Count,
-            HasLike =
-                userId != null && post.Likes.Any(like => like.UserId == userId),
-            CommentsCount = 0,
-            Tags = post.Tags.Select(tag => new TagDto
-            {
-                Id = tag.Id,
-                CreationTime = tag.CreationTime,
-                Name = tag.Name
-            }).ToList()
-        }).ToListAsync();
+        var postPageQueryable = postsQueryable.Skip(pageSize * (pageNumber - 1)).Take(pageSize);
+        var likes = await postPageQueryable
+            .Select(post => userId != null && post.Likes.Any(like => like.UserId == userId))
+            .ToListAsync();
+        var postList = await postPageQueryable.Include(post => post.Author)
+            .Include(post => post.Community)
+            .Include(post => post.Tags).ToListAsync();
+        var posts = postList.Zip(likes, PostMapper.GetPostDto).ToList();
+        var pageCount = (int)Math.Ceiling((float)await postsQueryable.CountAsync() / pageSize);
 
-        return new PostPagedListDto
-        {
-            Posts = posts,
-            PaginationInfo = new PageInfoDto
-            {
-                CurrentPage = pageNumber,
-                PageCount = (int)Math.Ceiling((float)await postsQueryable.CountAsync() / pageSize),
-                Size = posts.Count
-            }
-        };
+        return PostMapper.GetPostPagedListDto(pageNumber, posts, pageCount);
     }
 
     public async Task<PostFullDto> GetPostInfo(Guid? userId, Guid postId)
     {
-        var postInfo = await dbContext.Posts.Where(post => post.Id == postId).Select(post => new PostInfo(
-            new PostFullDto
-            {
-                Id = post.Id,
-                CreationTime = post.CreationTime,
-                EditedTime = post.EditedTime,
-                Title = post.Title,
-                Description = post.Description,
-                ReadingTime = post.ReadingTime,
-                ImageUri = post.ImageUri,
-                AuthorId = post.AuthorId,
-                AuthorName = post.Author.FullName,
-                CommunityId = post.CommunityId,
-                CommunityName = post.Community != null ? post.Community.Name : null,
-                AddressId = post.AddressId,
-                LikesCount = post.Likes.Count,
-                HasLike =
-                    userId != null && post.Likes.Any(like => like.UserId == userId),
-                CommentsCount = 0,
-                Tags = post.Tags.Select(tag => new TagDto
-                {
-                    Id = tag.Id,
-                    CreationTime = tag.CreationTime,
-                    Name = tag.Name
-                }).ToList()
-            },
-            post.Community == null || !post.Community.IsClosed || userId != null &&
-            post.Community.Subscriptions.Any(subscription => subscription.UserId == userId)
-        )).FirstOrDefaultAsync();
+        var postInfo = await dbContext.Posts.Where(post => post.Id == postId)
+            .Include(post => post.Author)
+            .Include(post => post.Community)
+            .Include(post => post.Tags).Select(post => new PostInfo(
+                post, 
+                post.Community == null || !post.Community.IsClosed || userId != null &&
+                post.Community.Subscriptions.Any(subscription => subscription.UserId == userId),
+                userId != null && post.Likes.Any(like => like.UserId == userId)
+            )).FirstOrDefaultAsync();
 
         if (postInfo == null)
             throw new BlogApiArgumentException($"Post with Guid {postId} does not exist");
@@ -135,7 +92,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         if (!postInfo.UserHasAccessToPost)
             throw new BlogApiSecurityException("User does not have access to the post");
 
-        return postInfo.Post;
+        return PostMapper.GetPostFullDto(postInfo.Post, postInfo.HasLike);
     }
 
     public async Task CreateUserPost(Guid userId, PostCreateEditDto createDto)
@@ -159,17 +116,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             return tag;
         });
 
-        var post = new Post
-        {
-            CreationTime = DateTime.UtcNow,
-            Title = createDto.Title,
-            Description = createDto.Description,
-            ReadingTime = createDto.ReadingTime,
-            ImageUri = createDto.ImageUri,
-            AddressId = createDto.AddressId,
-            AuthorId = userId,
-            CommunityId = null
-        };
+        var post = PostMapper.GetPostEntity(userId, null, createDto);
         post.Tags.AddRange(tags);
         dbContext.Posts.Add(post);
 
@@ -234,6 +181,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             throw new BlogApiArgumentException("Post is already liked by user");
 
         post.Likes.Add(new LikedPosts { UserId = userId, PostId = postId });
+        post.LikeCount++;
         await dbContext.SaveChangesAsync();
     }
 
@@ -255,8 +203,9 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
             .Select(postEntity => postEntity.Likes.FirstOrDefault(like => like.UserId == userId)).FirstAsync();
         if (like == null)
             throw new BlogApiArgumentException("Post is not liked by user");
-        
+
         post.Likes.Remove(like);
+        post.LikeCount--;
         await dbContext.SaveChangesAsync();
     }
 }

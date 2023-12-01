@@ -55,7 +55,7 @@ public class PostController(IPostService postService) : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<PostFullDto>> GetFullPostInfo(Guid id)
     {
-        var result = await postService.GetPostInfo((Guid)UserId!, id);
+        var result = await postService.GetPostInfo(UserId, id);
         return Ok(result);
     }
 

@@ -27,6 +27,8 @@ public class Post
     public Community? Community { get; set; } = null!;
     
     public List<Tag> Tags { get; } = new();
+    
+    public int LikeCount { get; set; }
 
     public List<LikedPosts> Likes { get; } = new();
 }

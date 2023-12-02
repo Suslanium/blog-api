@@ -20,7 +20,7 @@ public class UserController(IUserService userService) : ControllerBase
             return guidString == null ? null : Guid.Parse(guidString);
         }
     }
-    
+
     [HttpPost("register")]
     public async Task<IActionResult> Register(UserRegisterDto request)
     {
@@ -41,12 +41,14 @@ public class UserController(IUserService userService) : ControllerBase
         return Ok(token);
     }
 
-    [HttpPost("logoutAll")]
+    [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> LogoutAll()
+    public async Task<IActionResult> Logout()
     {
-        //TODO remove this and add logout method WITHOUT storing tokens in a raw form in db, but with regular db cleanup
-        await userService.InvalidateUserTokens((Guid)UserId!);
+        var iatClaim = HttpContext.User.FindFirst("nbf")!;
+        var issuedAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(iatClaim.Value)).UtcDateTime;
+
+        await userService.Logout((Guid)UserId!, issuedAt);
         return Ok();
     }
 

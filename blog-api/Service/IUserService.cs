@@ -10,7 +10,7 @@ public interface IUserService
 
     public Task<UserDto> GetUserProfile(Guid guid);
 
-    public Task EditUserProfile(Guid guid, UserEditDto userEditDto);
+    public Task Logout(Guid userGuid, DateTime tokenIssuedTime);
 
-    public Task InvalidateUserTokens(Guid guid);
+    public Task EditUserProfile(Guid guid, UserEditDto userEditDto);
 }

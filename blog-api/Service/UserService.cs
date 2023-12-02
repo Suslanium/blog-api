@@ -36,27 +36,6 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
         return CreateToken(user.Id);
     }
 
-    public async Task InvalidateUserTokens(Guid id)
-    {
-        var tokenEntity = await dbContext.TokenValidation.FindAsync(id);
-        if (tokenEntity != null)
-        {
-            dbContext.TokenValidation.Update(tokenEntity);
-            tokenEntity.MinimalIssuedTime = DateTime.UtcNow;
-        }
-        else
-        {
-            var entity = new TokenValidation
-            {
-                UserId = id,
-                MinimalIssuedTime = DateTime.UtcNow
-            };
-            dbContext.TokenValidation.Add(entity);
-        }
-
-        await dbContext.SaveChangesAsync();
-    }
-
     public async Task<UserDto> GetUserProfile(Guid id)
     {
         var userEntity = await dbContext.Users.FindAsync(id);
@@ -86,6 +65,18 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
 
         dbContext.Users.Update(userEntity);
         await dbContext.SaveChangesAsync();
+    }
+    
+    
+    public Task Logout(Guid userGuid, DateTime tokenIssuedTime)
+    {
+        var invalidationEntity = new InvalidTokenInfo
+        {
+            UserId = userGuid,
+            IssuedTime = tokenIssuedTime
+        };
+        dbContext.InvalidatedTokens.Add(invalidationEntity);
+        return dbContext.SaveChangesAsync();
     }
 
     private string CreateToken(Guid guid)

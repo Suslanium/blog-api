@@ -63,22 +63,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var dbContext = context.HttpContext.RequestServices.GetRequiredService<BlogDbContext>();
                 var guidString = context.Principal?.Claims
                     .FirstOrDefault(claim => claim.Type == ClaimTypes.GivenName)?.Value;
-                if (guidString == null)
+                var tokenIssuedTime = context.Properties.IssuedUtc?.UtcDateTime;
+                if (guidString == null || tokenIssuedTime == null)
                 {
                     context.Fail("Unauthorized");
                     return;
                 }
 
-                var minimalIssuedTime = (await
-                        dbContext.TokenValidation.FindAsync(Guid.Parse(guidString)))
-                    ?.MinimalIssuedTime;
-                if (minimalIssuedTime == null)
-                {
-                    return;
-                }
-
-                var tokenIssuedTime = context.Properties.IssuedUtc?.DateTime;
-                if (tokenIssuedTime == null || tokenIssuedTime < minimalIssuedTime)
+                var invalidationEntity =
+                    await dbContext.InvalidatedTokens.FindAsync(Guid.Parse(guidString), tokenIssuedTime);
+                if (invalidationEntity != null)
                 {
                     context.Fail("Unauthorized");
                 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using blog_api.Data;
@@ -11,9 +12,11 @@ using blog_api.Data;
 namespace blog_api.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231202132931_LogoutTableRemove")]
+    partial class LogoutTableRemove
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,19 +68,6 @@ namespace blog_api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Communities");
-                });
-
-            modelBuilder.Entity("blog_api.Data.Models.InvalidTokenInfo", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("IssuedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("UserId", "IssuedTime");
-
-                    b.ToTable("InvalidatedTokens");
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.LikedPosts", b =>
@@ -230,15 +220,6 @@ namespace blog_api.Migrations
                     b.HasOne("blog_api.Data.Models.Tag", null)
                         .WithMany()
                         .HasForeignKey("TagsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("blog_api.Data.Models.InvalidTokenInfo", b =>
-                {
-                    b.HasOne("blog_api.Data.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -11,15 +11,14 @@ public class BlogDbContext : DbContext
 
     public DbSet<Subscription> Subscriptions { get; set; }
 
-    public DbSet<TokenValidation> TokenValidation { get; set; }
-
     public DbSet<Post> Posts { get; set; }
 
     public DbSet<Tag> Tags { get; set; }
+    
+    public DbSet<InvalidTokenInfo> InvalidatedTokens { get; set; }
 
     public BlogDbContext(DbContextOptions<BlogDbContext> options) : base(options)
-    {
-    }
+    { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +38,8 @@ public class BlogDbContext : DbContext
             configureRight: builder =>
                 builder.HasOne<User>().WithMany(user => user.LikedPosts).HasForeignKey(likedPost => likedPost.UserId));
         modelBuilder.Entity<Tag>().HasIndex(tag => tag.Name);
+        modelBuilder.Entity<InvalidTokenInfo>().HasOne<User>().WithMany().HasForeignKey(info => info.UserId);
+        modelBuilder.Entity<InvalidTokenInfo>().HasKey(info => new { info.UserId, info.IssuedTime });
         base.OnModelCreating(modelBuilder);
     }
 }

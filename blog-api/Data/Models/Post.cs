@@ -31,4 +31,6 @@ public class Post
     public int LikeCount { get; set; }
 
     public List<LikedPosts> Likes { get; } = new();
+
+    public List<Comment> Comments { get; } = new();
 }

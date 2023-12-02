@@ -14,11 +14,14 @@ public class BlogDbContext : DbContext
     public DbSet<Post> Posts { get; set; }
 
     public DbSet<Tag> Tags { get; set; }
-    
+
+    public DbSet<Comment> Comments { get; set; }
+
     public DbSet<InvalidTokenInfo> InvalidatedTokens { get; set; }
 
     public BlogDbContext(DbContextOptions<BlogDbContext> options) : base(options)
-    { }
+    {
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,6 +43,12 @@ public class BlogDbContext : DbContext
         modelBuilder.Entity<Tag>().HasIndex(tag => tag.Name);
         modelBuilder.Entity<InvalidTokenInfo>().HasOne<User>().WithMany().HasForeignKey(info => info.UserId);
         modelBuilder.Entity<InvalidTokenInfo>().HasKey(info => new { info.UserId, info.IssuedTime });
+        modelBuilder.Entity<Comment>().HasOne<Post>().WithMany(post => post.Comments)
+            .HasForeignKey(comment => comment.PostId);
+        modelBuilder.Entity<Comment>().HasOne<Comment>().WithMany(comment => comment.SubComments)
+            .HasForeignKey(comment => comment.ParentCommentId);
+        modelBuilder.Entity<Comment>().HasOne(comment => comment.Author).WithMany()
+            .HasForeignKey(comment => comment.AuthorId);
         base.OnModelCreating(modelBuilder);
     }
 }

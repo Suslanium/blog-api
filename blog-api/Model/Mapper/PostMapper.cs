@@ -22,7 +22,7 @@ public static class PostMapper
             AddressId = from.AddressId,
             LikesCount = from.LikeCount,
             HasLike = hasLike,
-            CommentsCount = 0,
+            CommentsCount = from.CommentCount,
             Tags = from.Tags.Select(TagMapper.GetTagDto).ToList()
         };
     }
@@ -45,8 +45,20 @@ public static class PostMapper
             AddressId = from.AddressId,
             LikesCount = from.LikeCount,
             HasLike = hasLike,
-            CommentsCount = 0,
-            Tags = from.Tags.Select(TagMapper.GetTagDto).ToList()
+            CommentsCount = from.CommentCount,
+            Tags = from.Tags.Select(TagMapper.GetTagDto).ToList(),
+            Comments = from.Comments.Select(comment => new CommentDto
+            {
+                Id = comment.Id,
+                AuthorId = comment.AuthorId,
+                AuthorName = comment.Author.FullName,
+                Content = comment.Content,
+                CreationTime = comment.CreationTime,
+                DeleteTime = comment.DeletedTime,
+                ModifiedTime = comment.ModifiedTime,
+                ParentCommentId = comment.ParentCommentId,
+                SubCommentsCount = comment.SubCommentCount
+            }).ToList()
         };
     }
     

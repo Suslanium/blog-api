@@ -43,9 +43,9 @@ public class BlogDbContext : DbContext
         modelBuilder.Entity<Tag>().HasIndex(tag => tag.Name);
         modelBuilder.Entity<InvalidTokenInfo>().HasOne<User>().WithMany().HasForeignKey(info => info.UserId);
         modelBuilder.Entity<InvalidTokenInfo>().HasKey(info => new { info.UserId, info.IssuedTime });
-        modelBuilder.Entity<Comment>().HasOne<Post>().WithMany(post => post.Comments)
+        modelBuilder.Entity<Comment>().HasOne(comment => comment.Post).WithMany(post => post.Comments)
             .HasForeignKey(comment => comment.PostId);
-        modelBuilder.Entity<Comment>().HasOne<Comment>().WithMany(comment => comment.SubComments)
+        modelBuilder.Entity<Comment>().HasOne(comment => comment.ParentComment).WithMany(comment => comment.SubComments)
             .HasForeignKey(comment => comment.ParentCommentId);
         modelBuilder.Entity<Comment>().HasOne(comment => comment.Author).WithMany()
             .HasForeignKey(comment => comment.AuthorId);

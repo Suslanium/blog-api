@@ -24,13 +24,15 @@ public class Post
     
     public Guid? CommunityId { get; set; }
 
-    public Community? Community { get; set; } = null!;
+    public Community? Community { get; set; }
     
     public List<Tag> Tags { get; } = new();
     
     public int LikeCount { get; set; }
 
     public List<LikedPosts> Likes { get; } = new();
+    
+    public int CommentCount { get; set; }
 
     public List<Comment> Comments { get; } = new();
 }

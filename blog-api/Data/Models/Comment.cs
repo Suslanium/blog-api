@@ -13,12 +13,18 @@ public class Comment
     public DateTime? DeletedTime { get; set; }
     
     public required Guid PostId { get; set; }
+
+    public Post Post { get; set; } = null!;
     
     public Guid? ParentCommentId { get; set; }
+    
+    public Comment? ParentComment { get; set; }
     
     public required Guid AuthorId { get; set; }
 
     public User Author { get; set; } = null!;
+    
+    public int SubCommentCount { get; set; }
 
     public List<Comment> SubComments { get; } = new();
 }

@@ -79,7 +79,9 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
         var postInfo = await dbContext.Posts.Where(post => post.Id == postId)
             .Include(post => post.Author)
             .Include(post => post.Community)
-            .Include(post => post.Tags).Select(post => new PostInfo(
+            .Include(post => post.Tags)
+            .Include(post => post.Comments.Where(comment => comment.ParentCommentId == null))
+            .ThenInclude(comment => comment.Author).Select(post => new PostInfo(
                 post, 
                 post.Community == null || !post.Community.IsClosed || userId != null &&
                 post.Community.Subscriptions.Any(subscription => subscription.UserId == userId),

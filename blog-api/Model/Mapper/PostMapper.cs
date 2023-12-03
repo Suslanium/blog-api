@@ -47,18 +47,7 @@ public static class PostMapper
             HasLike = hasLike,
             CommentsCount = from.CommentCount,
             Tags = from.Tags.Select(TagMapper.GetTagDto).ToList(),
-            Comments = from.Comments.Select(comment => new CommentDto
-            {
-                Id = comment.Id,
-                AuthorId = comment.AuthorId,
-                AuthorName = comment.Author.FullName,
-                Content = comment.Content,
-                CreationTime = comment.CreationTime,
-                DeleteTime = comment.DeletedTime,
-                ModifiedTime = comment.ModifiedTime,
-                ParentCommentId = comment.ParentCommentId,
-                SubCommentsCount = comment.SubCommentCount
-            }).ToList()
+            Comments = from.Comments.Select(CommentMapper.GetCommentDto).ToList()
         };
     }
     

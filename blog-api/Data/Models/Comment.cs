@@ -20,6 +20,8 @@ public class Comment
     
     public Comment? ParentComment { get; set; }
     
+    public Guid? TopLevelParentCommentId { get; set; }
+    
     public required Guid AuthorId { get; set; }
 
     public User Author { get; set; } = null!;

@@ -2,15 +2,29 @@
 using blog_api.Data.Models;
 using blog_api.Exception;
 using blog_api.Model;
+using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace blog_api.Service;
 
 public class CommentService(BlogDbContext dbContext) : ICommentService
 {
-    public Task<List<CommentDto>> GetCommentTree(Guid userId, Guid rootCommentId)
+    public async Task<List<CommentDto>> GetCommentTree(Guid? userId, Guid rootCommentId)
     {
-        throw new NotImplementedException();
+        if (!await dbContext.Comments.AnyAsync(
+                comment => comment.Id == rootCommentId && comment.ParentCommentId == null))
+            throw new BlogApiArgumentException(
+                $"Comment with Guid {rootCommentId} either does not exist or is not a root element");
+
+        if (!await dbContext.Comments.AnyAsync(comment =>
+                comment.Id == rootCommentId && (comment.Post.Community == null || !comment.Post.Community.IsClosed ||
+                                                comment.Post.Community.Subscriptions.Any(subscription =>
+                                                    subscription.UserId == userId))))
+            throw new BlogApiSecurityException("User does not have access to comment's post");
+
+        var result = await dbContext.Comments.Where(comment => comment.TopLevelParentCommentId == rootCommentId)
+            .OrderBy(comment => comment.CreationTime).Include(comment => comment.Author).ToListAsync();
+        return result.Select(CommentMapper.GetCommentDto).ToList();
     }
 
     public async Task AddComment(Guid userId, Guid postId, CommentCreateDto commentCreateDto)
@@ -36,13 +50,20 @@ public class CommentService(BlogDbContext dbContext) : ICommentService
                     $"Parent comment with Guid {commentCreateDto.ParentCommentId} either does not exist or does not belong to the specified post");
         }
 
+        Guid? topLevelParentCommentId = null;
+        if (parentComment != null)
+        {
+            topLevelParentCommentId = parentComment.TopLevelParentCommentId ?? parentComment.Id;
+        }
+
         var comment = new Comment
         {
             AuthorId = userId,
             Content = commentCreateDto.Content,
             CreationTime = DateTime.UtcNow,
             ParentCommentId = commentCreateDto.ParentCommentId,
-            PostId = postId
+            PostId = postId,
+            TopLevelParentCommentId = topLevelParentCommentId
         };
         if (parentComment != null)
             parentComment.SubCommentCount++;
@@ -79,7 +100,7 @@ public class CommentService(BlogDbContext dbContext) : ICommentService
         var comment = await dbContext.Comments.Include(commentEntity => commentEntity.ParentComment)
             .Include(commentEntity => commentEntity.Post)
             .FirstOrDefaultAsync(commentEntity => commentEntity.Id == commentId);
-        
+
         if (comment == null || comment.DeletedTime != null)
             throw new BlogApiArgumentException($"Comment with Guid {commentId} does not exist");
 

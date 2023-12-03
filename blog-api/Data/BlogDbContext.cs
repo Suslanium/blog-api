@@ -49,6 +49,8 @@ public class BlogDbContext : DbContext
             .HasForeignKey(comment => comment.ParentCommentId);
         modelBuilder.Entity<Comment>().HasOne(comment => comment.Author).WithMany()
             .HasForeignKey(comment => comment.AuthorId);
+        modelBuilder.Entity<Comment>().HasOne<Comment>().WithMany()
+            .HasForeignKey(comment => comment.TopLevelParentCommentId);
         base.OnModelCreating(modelBuilder);
     }
 }

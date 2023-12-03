@@ -4,7 +4,7 @@ namespace blog_api.Service;
 
 public interface ICommentService
 {
-    public Task<List<CommentDto>> GetCommentTree(Guid userId, Guid rootCommentId);
+    public Task<List<CommentDto>> GetCommentTree(Guid? userId, Guid rootCommentId);
     
     public Task AddComment(Guid userId, Guid postId, CommentCreateDto commentCreateDto);
 

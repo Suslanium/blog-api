@@ -34,5 +34,5 @@ public class PostFullDto
     
     public required List<TagDto> Tags { get; set; }
     
-    //TODO comments
+    public required List<CommentDto> Comments { get; set; }
 }

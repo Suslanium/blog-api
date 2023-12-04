@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using blog_api.Data;
@@ -11,9 +12,11 @@ using blog_api.Data;
 namespace blog_api.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231202194841_CommentAggregateAttr")]
+    partial class CommentAggregateAttr
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,12 +68,6 @@ namespace blog_api.Migrations
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("SubCommentCount")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("TopLevelParentCommentId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorId");
@@ -78,8 +75,6 @@ namespace blog_api.Migrations
                     b.HasIndex("ParentCommentId");
 
                     b.HasIndex("PostId");
-
-                    b.HasIndex("TopLevelParentCommentId");
 
                     b.ToTable("Comments");
                 });
@@ -292,7 +287,7 @@ namespace blog_api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("blog_api.Data.Models.Comment", "ParentComment")
+                    b.HasOne("blog_api.Data.Models.Comment", null)
                         .WithMany("SubComments")
                         .HasForeignKey("ParentCommentId");
 
@@ -302,13 +297,7 @@ namespace blog_api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("blog_api.Data.Models.Comment", null)
-                        .WithMany()
-                        .HasForeignKey("TopLevelParentCommentId");
-
                     b.Navigation("Author");
-
-                    b.Navigation("ParentComment");
 
                     b.Navigation("Post");
                 });

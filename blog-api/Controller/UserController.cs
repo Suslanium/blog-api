@@ -22,7 +22,7 @@ public class UserController(IUserService userService) : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(UserRegisterDto request)
+    public async Task<ActionResult<TokenResponse>> Register(UserRegisterDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);
@@ -32,7 +32,7 @@ public class UserController(IUserService userService) : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginCredentialsDto request)
+    public async Task<ActionResult<TokenResponse>> Login(LoginCredentialsDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.ValidationState);

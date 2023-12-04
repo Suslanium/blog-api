@@ -4,45 +4,33 @@ namespace blog_api.Model.Mapper;
 
 public static class AddressLevelMapper
 {
-    public static Tuple<GarAddressLevel, String> GetAddressLevel(uint level)
-    {
-        switch (level)
+    public static Tuple<GarAddressLevel, string> GetAddressLevel(uint level)
+        => level switch
         {
-            case 1 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.Region, "Субъект РФ");
-            case 2 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.AdministrativeArea, "Административный район");
-            case 3 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.MunicipalArea, "Муниципальный район");
-            case 4 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.RuralUrbanSettlement, "Сельское/городское поселение");
-            case 5 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.City, "Город");
-            case 6 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.Locality, "Населенный пункт");
-            case 7 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.ElementOfPlanningStructure, "Элемент планировочной структуры");
-            case 8 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.ElementOfRoadNetwork, "Элемент улично-дорожной сети");
-            case 9 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.Land, "Земельный участок");
-            case 10 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.Building, "Здание (сооружение)");
-            case 11 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.Room, "Помещение");
-            case 12 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.RoomInRooms, "Помещения в пределах помещения");
-            case 13 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.AutonomousRegionLevel, "Уровень автономного округа");
-            case 14 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.IntracityLevel, "Уровень внутригородской территории");
-            case 15 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.AdditionalTerritoriesLevel, "Уровень дополнительных территорий");
-            case 16 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.LevelOfObjectsInAdditionalTerritories, "Уровень объектов на дополнительных территориях");
-            case 17 : return new Tuple<GarAddressLevel, string>
-                (GarAddressLevel.CarPlace, "Машиноместо");
-            default: throw new ArgumentException();
-        }
-    }
+            1 => new Tuple<GarAddressLevel, string>(GarAddressLevel.Region, "Субъект РФ"),
+            2 => new Tuple<GarAddressLevel, string>(GarAddressLevel.AdministrativeArea, "Административный район"),
+            3 => new Tuple<GarAddressLevel, string>(GarAddressLevel.MunicipalArea, "Муниципальный район"),
+            4 => new Tuple<GarAddressLevel, string>(GarAddressLevel.RuralUrbanSettlement,
+                "Сельское/городское поселение"),
+            5 => new Tuple<GarAddressLevel, string>(GarAddressLevel.City, "Город"),
+            6 => new Tuple<GarAddressLevel, string>(GarAddressLevel.Locality, "Населенный пункт"),
+            7 => new Tuple<GarAddressLevel, string>(GarAddressLevel.ElementOfPlanningStructure,
+                "Элемент планировочной структуры"),
+            8 => new Tuple<GarAddressLevel, string>(GarAddressLevel.ElementOfRoadNetwork,
+                "Элемент улично-дорожной сети"),
+            9 => new Tuple<GarAddressLevel, string>(GarAddressLevel.Land, "Земельный участок"),
+            10 => new Tuple<GarAddressLevel, string>(GarAddressLevel.Building, "Здание (сооружение)"),
+            11 => new Tuple<GarAddressLevel, string>(GarAddressLevel.Room, "Помещение"),
+            12 => new Tuple<GarAddressLevel, string>(GarAddressLevel.RoomInRooms, "Помещения в пределах помещения"),
+            13 => new Tuple<GarAddressLevel, string>(GarAddressLevel.AutonomousRegionLevel,
+                "Уровень автономного округа"),
+            14 => new Tuple<GarAddressLevel, string>(GarAddressLevel.IntracityLevel,
+                "Уровень внутригородской территории"),
+            15 => new Tuple<GarAddressLevel, string>(GarAddressLevel.AdditionalTerritoriesLevel,
+                "Уровень дополнительных территорий"),
+            16 => new Tuple<GarAddressLevel, string>(GarAddressLevel.LevelOfObjectsInAdditionalTerritories,
+                "Уровень объектов на дополнительных территориях"),
+            17 => new Tuple<GarAddressLevel, string>(GarAddressLevel.CarPlace, "Машиноместо"),
+            _ => throw new ArgumentException()
+        };
 }

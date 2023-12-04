@@ -5,8 +5,7 @@ namespace blog_api.Model.Mapper;
 public static class PostMapper
 {
     public static PostDto GetPostDto(Post from, bool hasLike)
-    {
-        return new PostDto
+        => new PostDto
         {
             Id = from.Id,
             CreationTime = from.CreationTime,
@@ -25,11 +24,9 @@ public static class PostMapper
             CommentsCount = from.CommentCount,
             Tags = from.Tags.Select(TagMapper.GetTagDto).ToList()
         };
-    }
 
     public static PostFullDto GetPostFullDto(Post from, bool hasLike)
-    {
-        return new PostFullDto
+        => new PostFullDto
         {
             Id = from.Id,
             CreationTime = from.CreationTime,
@@ -49,11 +46,9 @@ public static class PostMapper
             Tags = from.Tags.Select(TagMapper.GetTagDto).ToList(),
             Comments = from.Comments.Select(CommentMapper.GetCommentDto).ToList()
         };
-    }
-    
+
     public static PostPagedListDto GetPostPagedListDto(int pageNumber, List<PostDto> posts, int pageCount)
-    {
-        return new PostPagedListDto
+        => new PostPagedListDto
         {
             Posts = posts,
             PaginationInfo = new PageInfoDto
@@ -63,11 +58,9 @@ public static class PostMapper
                 Size = posts.Count
             }
         };
-    }
-    
+
     public static Post GetPostEntity(Guid userId, Guid? communityId, PostCreateEditDto createDto)
-    {
-        return new Post
+        => new Post
         {
             CreationTime = DateTime.UtcNow,
             Title = createDto.Title,
@@ -78,5 +71,4 @@ public static class PostMapper
             AuthorId = userId,
             CommunityId = communityId
         };
-    }
 }

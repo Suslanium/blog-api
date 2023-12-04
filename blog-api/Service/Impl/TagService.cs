@@ -1,11 +1,10 @@
 ﻿using blog_api.Data;
-using blog_api.Data.Models;
 using blog_api.Exception;
 using blog_api.Model;
 using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace blog_api.Service;
+namespace blog_api.Service.Impl;
 
 public class TagService(BlogDbContext dbContext) : ITagService
 {

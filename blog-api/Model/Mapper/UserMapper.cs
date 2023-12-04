@@ -6,8 +6,7 @@ namespace blog_api.Model.Mapper;
 public static class UserMapper
 {
     public static UserDto GetUserDto(User from)
-    {
-        return new UserDto
+        => new UserDto
         {
             Id = from.Id,
             Email = from.Email,
@@ -17,11 +16,9 @@ public static class UserMapper
             Gender = from.Gender,
             PhoneNumber = from.PhoneNumber
         };
-    }
 
     public static User GetUserEntity(UserRegisterDto from)
-    {
-        return new User
+        => new User
         {
             FullName = from.FullName,
             Email = from.Email,
@@ -31,11 +28,9 @@ public static class UserMapper
             CreationTime = DateTime.UtcNow,
             BirthDate = from.BirthDate
         };
-    }
-    
+
     public static Expression<Func<User, AuthorDto>> ConvertToAuthorDto()
-    {
-        return user =>
+        => user =>
             new AuthorDto
             {
                 FullName = user.FullName,
@@ -45,5 +40,6 @@ public static class UserMapper
                 Posts = user.Posts.Count,
                 Likes = user.Posts.Sum(post => post.LikeCount)
             };
-    }
+
+    public static TokenResponse GetTokenResponse(string token) => new TokenResponse { Token = token };
 }

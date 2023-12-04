@@ -9,11 +9,11 @@ using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace blog_api.Service;
+namespace blog_api.Service.Impl;
 
 public class UserService(BlogDbContext dbContext, IConfiguration configuration) : IUserService
 {
-    public async Task<string> Register(UserRegisterDto userRegisterDto)
+    public async Task<TokenResponse> Register(UserRegisterDto userRegisterDto)
     {
         if (await dbContext.Users.CountAsync(user => user.Email == userRegisterDto.Email) > 0)
             throw new BlogApiArgumentException("User with the same email already exists");
@@ -22,18 +22,20 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
 
         var userEntity = dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
-        
-        return CreateToken(userEntity.Entity.Id);
+
+        var token = CreateToken(userEntity.Entity.Id);
+        return UserMapper.GetTokenResponse(token);
     }
 
-    public async Task<string> Login(LoginCredentialsDto loginCredentials)
+    public async Task<TokenResponse> Login(LoginCredentialsDto loginCredentials)
     {
         var user = await dbContext.Users.Where(user => user.Email == loginCredentials.Email).FirstOrDefaultAsync();
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginCredentials.Password, user.PasswordHash))
             throw new BlogApiArgumentException("Incorrect email or password");
 
-        return CreateToken(user.Id);
+        var token = CreateToken(user.Id);
+        return UserMapper.GetTokenResponse(token);
     }
 
     public async Task<UserDto> GetUserProfile(Guid id)

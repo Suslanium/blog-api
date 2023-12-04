@@ -4,9 +4,9 @@ namespace blog_api.Service;
 
 public interface IUserService
 {
-    public Task<string> Register(UserRegisterDto userRegisterDto);
+    public Task<TokenResponse> Register(UserRegisterDto userRegisterDto);
 
-    public Task<string> Login(LoginCredentialsDto loginCredentials);
+    public Task<TokenResponse> Login(LoginCredentialsDto loginCredentials);
 
     public Task<UserDto> GetUserProfile(Guid guid);
 

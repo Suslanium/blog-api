@@ -5,8 +5,7 @@ namespace blog_api.Model.Mapper;
 public static class CommentMapper
 {
     public static CommentDto GetCommentDto(Comment from)
-    {
-        return new CommentDto
+        => new CommentDto
         {
             Id = from.Id,
             AuthorId = from.AuthorId,
@@ -18,5 +17,4 @@ public static class CommentMapper
             ParentCommentId = from.ParentCommentId,
             SubCommentsCount = from.SubCommentCount
         };
-    }
 }

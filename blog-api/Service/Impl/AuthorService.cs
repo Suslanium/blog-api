@@ -3,7 +3,7 @@ using blog_api.Model;
 using blog_api.Model.Mapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace blog_api.Service;
+namespace blog_api.Service.Impl;
 
 public class AuthorService(BlogDbContext dbContext) : IAuthorService
 {

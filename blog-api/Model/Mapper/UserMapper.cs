@@ -1,4 +1,5 @@
-﻿using blog_api.Data.Models;
+﻿using System.Linq.Expressions;
+using blog_api.Data.Models;
 
 namespace blog_api.Model.Mapper;
 
@@ -30,5 +31,19 @@ public static class UserMapper
             CreationTime = DateTime.UtcNow,
             BirthDate = from.BirthDate
         };
+    }
+    
+    public static Expression<Func<User, AuthorDto>> ConvertToAuthorDto()
+    {
+        return user =>
+            new AuthorDto
+            {
+                FullName = user.FullName,
+                BirthDate = user.BirthDate,
+                CreationTime = user.CreationTime,
+                Gender = user.Gender,
+                Posts = user.Posts.Count,
+                Likes = user.Posts.Sum(post => post.LikeCount)
+            };
     }
 }

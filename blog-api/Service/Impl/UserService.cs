@@ -15,7 +15,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
 {
     public async Task<TokenResponse> Register(UserRegisterDto userRegisterDto)
     {
-        if (await dbContext.Users.CountAsync(user => user.Email == userRegisterDto.Email) > 0)
+        if (await dbContext.Users.AnyAsync(user => user.Email == userRegisterDto.Email))
             throw new BlogApiArgumentException("User with the same email already exists");
 
         var user = UserMapper.GetUserEntity(userRegisterDto);
@@ -55,7 +55,7 @@ public class UserService(BlogDbContext dbContext, IConfiguration configuration) 
 
         if (userEntity.Email != userEditDto.Email)
         {
-            if (await dbContext.Users.CountAsync(user => user.Email == userEditDto.Email) > 0)
+            if (await dbContext.Users.AnyAsync(user => user.Email == userEditDto.Email))
                 throw new BlogApiArgumentException("User with the same email already exists");
         }
 

@@ -12,7 +12,7 @@ public class AddressService(FiasDbContext dbContext) : IAddressService
     {
         var loweredQuery = query?.ToLower();
         var filteredAddressObjects = dbContext.AsAddrObjs.Where(obj =>
-            obj.Isactual == 1 && (loweredQuery == null || obj.Name.ToLower().Contains(loweredQuery)));
+            obj.Isactual == 1 && (loweredQuery == null || obj.NormalizedName.Contains(loweredQuery)));
 
         var resultAddressObjects =
             await dbContext.AsAdmHierarchies.Where(hierarchyElement => hierarchyElement.Parentobjid == parentObjectId)
@@ -25,7 +25,7 @@ public class AddressService(FiasDbContext dbContext) : IAddressService
 
         var filteredHouseObjects = dbContext.AsHouses.Where(obj =>
             obj.Isactual == 1 &&
-            (loweredQuery == null || obj.Housenum != null && obj.Housenum.ToLower().Contains(loweredQuery)));
+            (loweredQuery == null || obj.NormalizedHouseNum != null && obj.NormalizedHouseNum.Contains(loweredQuery)));
 
         var resultHouseObjects =
             await dbContext.AsAdmHierarchies.Where(hierarchyElement => hierarchyElement.Parentobjid == parentObjectId)

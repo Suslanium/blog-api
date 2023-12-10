@@ -30,6 +30,8 @@ public partial class AsHouse
     /// Основной номер дома
     /// </summary>
     public string? Housenum { get; set; }
+    
+    public string? NormalizedHouseNum { get; set; }
 
     /// <summary>
     /// Дополнительный номер дома 1

@@ -34,7 +34,7 @@ namespace blog_api.Migrations
 
                     b.HasIndex("TagsId");
 
-                    b.ToTable("PostTag");
+                    b.ToTable("PostTag", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.Comment", b =>
@@ -81,7 +81,7 @@ namespace blog_api.Migrations
 
                     b.HasIndex("TopLevelParentCommentId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.Community", b =>
@@ -111,7 +111,7 @@ namespace blog_api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Communities");
+                    b.ToTable("Communities", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.InvalidTokenInfo", b =>
@@ -124,7 +124,7 @@ namespace blog_api.Migrations
 
                     b.HasKey("UserId", "IssuedTime");
 
-                    b.ToTable("InvalidatedTokens");
+                    b.ToTable("InvalidatedTokens", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.LikedPosts", b =>
@@ -139,7 +139,7 @@ namespace blog_api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("LikedPosts");
+                    b.ToTable("LikedPosts", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.Post", b =>
@@ -191,7 +191,7 @@ namespace blog_api.Migrations
 
                     b.HasIndex("CommunityId");
 
-                    b.ToTable("Posts");
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.Subscription", b =>
@@ -209,7 +209,7 @@ namespace blog_api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.Tag", b =>
@@ -229,7 +229,7 @@ namespace blog_api.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Tags");
+                    b.ToTable("Tags", (string)null);
                 });
 
             modelBuilder.Entity("blog_api.Data.Models.User", b =>
@@ -266,7 +266,7 @@ namespace blog_api.Migrations
 
                     b.HasIndex("Email");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("PostTag", b =>

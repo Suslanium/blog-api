@@ -31,6 +31,8 @@ public partial class AsAddrObj
     /// </summary>
     public string Name { get; set; } = null!;
 
+    public string NormalizedName { get; set; } = null!;
+
     /// <summary>
     /// Краткое наименование типа объекта
     /// </summary>

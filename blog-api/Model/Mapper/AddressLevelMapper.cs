@@ -33,4 +33,34 @@ public static class AddressLevelMapper
             17 => new Tuple<GarAddressLevel, string>(GarAddressLevel.CarPlace, "Машиноместо"),
             _ => throw new ArgumentException()
         };
+
+    public static string GetHouseTypeString(uint number)
+        => number switch
+        {
+            1 => "владение",
+            2 => "дом",
+            3 => "домовладение",
+            4 => "гараж",
+            5 => "здание",
+            6 => "шахта",
+            7 => "строение",
+            8 => "сооружение",
+            9 => "литера",
+            10 => "корпус",
+            11 => "подвал",
+            12 => "котельная",
+            13 => "погреб",
+            14 => "объект незавершенного строительства (ОНС)",
+            _ => throw new ArgumentException()
+        };
+
+    public static string GetAdditionalHouseTypeString(uint number)
+        => number switch
+        {
+            1 => "корпус",
+            2 => "строение",
+            3 => "сооружение",
+            4 => "литера",
+            _ => throw new ArgumentException()
+        };
 }

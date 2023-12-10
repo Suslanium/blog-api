@@ -3,6 +3,7 @@ using blog_api.Data.Models;
 using blog_api.Exception;
 using blog_api.Model;
 using blog_api.Model.Mapper;
+using blog_api.Service.Helper;
 using Microsoft.EntityFrameworkCore;
 
 namespace blog_api.Service.Impl;
@@ -38,24 +39,8 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
                 post.Community == null || !post.Community.IsClosed ||
                 post.Community.Subscriptions.Any(subscription => subscription.UserId == userId));
 
-        if (minReadingTime != null)
-            postsQueryable = postsQueryable.Where(post => post.ReadingTime >= minReadingTime);
-        if (maxReadingTime != null)
-            postsQueryable = postsQueryable.Where(post => post.ReadingTime <= maxReadingTime);
-        if (tags != null)
-            postsQueryable = postsQueryable.Where(post =>
-                post.Tags.Select(tag => tag.Id).Intersect(tags).Count() == tags.Count);
-        if (authorName != null)
-            postsQueryable = postsQueryable.Where(post => post.Author.FullName.Contains(authorName));
-        if (sorting != null)
-            postsQueryable = sorting switch
-            {
-                SortingOption.CreateDesc => postsQueryable.OrderByDescending(post => post.CreationTime),
-                SortingOption.CreateAsc => postsQueryable.OrderBy(post => post.CreationTime),
-                SortingOption.LikeDesc => postsQueryable.OrderByDescending(post => post.LikeCount),
-                SortingOption.LikeAsc => postsQueryable.OrderBy(post => post.LikeCount),
-                _ => postsQueryable
-            };
+        postsQueryable = postsQueryable.FilterPosts(tags, authorName, minReadingTime, maxReadingTime, sorting);
+        
         if (onlyUserCommunities)
             postsQueryable = postsQueryable.Where(post =>
                 post.Community != null &&
@@ -100,23 +85,9 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
     public async Task CreateUserPost(Guid userId, PostCreateEditDto createDto)
     {
         if (createDto.AddressId != null)
-        {
-            var addrObjectCount =
-                await fiasDbContext.AsAddrObjs.CountAsync(obj =>
-                    obj.Isactual == 1 && obj.Objectguid == createDto.AddressId);
-            var houseCount = await fiasDbContext.AsHouses.CountAsync(house =>
-                house.Isactual == 1 && house.Objectguid == createDto.AddressId);
-            if (houseCount < 1 && addrObjectCount < 1)
-                throw new BlogApiArgumentException($"Address with Guid {createDto.AddressId} does not exist");
-        }
+            await fiasDbContext.EnsureAddressExists((Guid)createDto.AddressId);
 
-        var tags = createDto.Tags.Select(tagGuid =>
-        {
-            var tag = dbContext.Tags.Find(tagGuid);
-            if (tag == null)
-                throw new BlogApiArgumentException($"Tag with Guid {tagGuid} does not exist");
-            return tag;
-        });
+        var tags = dbContext.GetTagsFromDto(createDto);
 
         var post = PostMapper.GetPostEntity(userId, null, createDto);
         post.Tags.AddRange(tags);
@@ -134,22 +105,17 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
 
         bool hasEditAccess;
         if (post.CommunityId != null)
-            hasEditAccess = await dbContext.Communities.AnyAsync(community =>
-                community.Id == post.CommunityId && community.Subscriptions.Any(subscription =>
-                    subscription.UserId == userId && subscription.CommunityRole == CommunityRole.Administrator));
+            hasEditAccess = await dbContext.UserHasAdministrativeRights((Guid)post.CommunityId, userId);
         else
             hasEditAccess = post.AuthorId == userId;
 
         if (!hasEditAccess)
             throw new BlogApiSecurityException("User doesn't have rights to edit this post");
+        
+        if (editDto.AddressId != null)
+            await fiasDbContext.EnsureAddressExists((Guid)editDto.AddressId);
 
-        var tags = editDto.Tags.Select(tagGuid =>
-        {
-            var tag = dbContext.Tags.Find(tagGuid);
-            if (tag == null)
-                throw new BlogApiArgumentException($"Tag with Guid {tagGuid} does not exist");
-            return tag;
-        });
+        var tags = dbContext.GetTagsFromDto(editDto);
 
         post.Title = editDto.Title;
         post.Description = editDto.Description;
@@ -172,8 +138,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
 
         if (post.CommunityId != null)
         {
-            var canAccessPost = await dbContext.Communities.AnyAsync(community => community.Id == post.CommunityId &&
-                (!community.IsClosed || community.Subscriptions.Any(subscription => subscription.UserId == userId)));
+            var canAccessPost = await dbContext.UserCanAccessCommunityPost((Guid)post.CommunityId, userId);
             if (!canAccessPost)
                 throw new BlogApiSecurityException("User doesn't have access to this post");
         }
@@ -195,8 +160,7 @@ public class PostService(BlogDbContext dbContext, FiasDbContext fiasDbContext) :
 
         if (post.CommunityId != null)
         {
-            var canAccessPost = await dbContext.Communities.AnyAsync(community => community.Id == post.CommunityId &&
-                (!community.IsClosed || community.Subscriptions.Any(subscription => subscription.UserId == userId)));
+            var canAccessPost = await dbContext.UserCanAccessCommunityPost((Guid)post.CommunityId, userId);
             if (!canAccessPost)
                 throw new BlogApiSecurityException("User doesn't have access to this post");
         }

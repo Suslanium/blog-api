@@ -3,6 +3,7 @@ using blog_api.Data.Models;
 using blog_api.Exception;
 using blog_api.Model;
 using blog_api.Model.Mapper;
+using blog_api.Service.Helper;
 using Microsoft.EntityFrameworkCore;
 
 namespace blog_api.Service.Impl;
@@ -33,11 +34,7 @@ public class CommentService(BlogDbContext dbContext) : ICommentService
         if (post == null)
             throw new BlogApiArgumentException($"Post with Guid {postId} does not exist");
 
-        if (!await dbContext.Posts.Where(postEntity => postEntity.Id == postId)
-                .Select(postEntity =>
-                    postEntity.Community == null || !postEntity.Community.IsClosed ||
-                    postEntity.Community.Subscriptions.Any(subscription => subscription.UserId == userId))
-                .FirstOrDefaultAsync())
+        if (!await dbContext.UserHasAccessToComments(postId, userId))
             throw new BlogApiSecurityException("User doesn't have access to specified post");
 
         Comment? parentComment = null;
@@ -82,11 +79,7 @@ public class CommentService(BlogDbContext dbContext) : ICommentService
         if (comment.AuthorId != userId)
             throw new BlogApiSecurityException("Only comment's author can edit their comment");
 
-        if (!await dbContext.Posts.Where(postEntity => postEntity.Id == comment.PostId)
-                .Select(postEntity =>
-                    postEntity.Community == null || !postEntity.Community.IsClosed ||
-                    postEntity.Community.Subscriptions.Any(subscription => subscription.UserId == userId))
-                .FirstOrDefaultAsync())
+        if (!await dbContext.UserHasAccessToComments(comment.PostId, userId))
             throw new BlogApiSecurityException("User doesn't have access to specified post");
 
         comment.Content = commentUpdateDto.Content;
@@ -107,11 +100,7 @@ public class CommentService(BlogDbContext dbContext) : ICommentService
         if (comment.AuthorId != userId)
             throw new BlogApiSecurityException("Only comment's author can delete their comment");
 
-        if (!await dbContext.Posts.Where(postEntity => postEntity.Id == comment.PostId)
-                .Select(postEntity =>
-                    postEntity.Community == null || !postEntity.Community.IsClosed ||
-                    postEntity.Community.Subscriptions.Any(subscription => subscription.UserId == userId))
-                .FirstOrDefaultAsync())
+        if (!await dbContext.UserHasAccessToComments(comment.PostId, userId))
             throw new BlogApiSecurityException("User doesn't have access to specified post");
 
         if (comment.SubCommentCount < 1)

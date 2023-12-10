@@ -14,27 +14,50 @@ public class AddressService(FiasDbContext dbContext) : IAddressService
         var filteredAddressObjects = dbContext.AsAddrObjs.Where(obj =>
             obj.Isactual == 1 && (loweredQuery == null || obj.NormalizedName.Contains(loweredQuery)));
 
-        var resultAddressObjects =
-            await dbContext.AsAdmHierarchies.Where(hierarchyElement => hierarchyElement.Parentobjid == parentObjectId)
-                .Join(
-                    filteredAddressObjects,
-                    hierarchyElement => hierarchyElement.Objectid,
-                    obj => obj.Objectid,
-                    (hierarchyElement, obj) => SearchAddressDtoMapper.GetSearchAddressDto(obj)
-                ).Take(10).ToListAsync();
+        var resultAddressQuery = dbContext.AsAdmHierarchies
+            .Where(hierarchyElement => hierarchyElement.Parentobjid == parentObjectId)
+            .Join(
+                filteredAddressObjects,
+                hierarchyElement => hierarchyElement.Objectid,
+                obj => obj.Objectid,
+                (hierarchyElement, obj) => new
+                    { Name = obj.NormalizedName, Object = SearchAddressDtoMapper.GetSearchAddressDto(obj) }
+            );
+
+        if (loweredQuery != null)
+            resultAddressQuery = resultAddressQuery
+                .OrderBy(obj => EF.Functions.TrigramsSimilarityDistance(obj.Name, loweredQuery));
+        else
+            resultAddressQuery = resultAddressQuery
+                .OrderBy(obj => obj.Name);
+
+        var resultAddressObjects = await resultAddressQuery.Take(50).Select(obj => obj.Object).ToListAsync();
 
         var filteredHouseObjects = dbContext.AsHouses.Where(obj =>
             obj.Isactual == 1 &&
             (loweredQuery == null || obj.NormalizedHouseNum != null && obj.NormalizedHouseNum.Contains(loweredQuery)));
 
-        var resultHouseObjects =
-            await dbContext.AsAdmHierarchies.Where(hierarchyElement => hierarchyElement.Parentobjid == parentObjectId)
-                .Join(
-                    filteredHouseObjects,
-                    hierarchyElement => hierarchyElement.Objectid,
-                    obj => obj.Objectid,
-                    (hierarchyElement, obj) => SearchAddressDtoMapper.GetSearchAddressDto(obj)
-                ).Take(10).ToListAsync();
+        var resultHouseQuery = dbContext.AsAdmHierarchies
+            .Where(hierarchyElement => hierarchyElement.Parentobjid == parentObjectId)
+            .Join(
+                filteredHouseObjects,
+                hierarchyElement => hierarchyElement.Objectid,
+                obj => obj.Objectid,
+                (hierarchyElement, obj) => new
+                {
+                    Name = obj.NormalizedHouseNum, AddNum1 = obj.Addnum1, AddNum2 = obj.Addnum2,
+                    Object = SearchAddressDtoMapper.GetSearchAddressDto(obj)
+                }
+            );
+
+        if (loweredQuery != null)
+            resultHouseQuery = resultHouseQuery.OrderBy(obj =>
+                    obj.Name != null ? EF.Functions.TrigramsSimilarityDistance(obj.Name, loweredQuery) : int.MaxValue)
+                .ThenBy(obj => obj.Name).ThenBy(obj => obj.AddNum1 ?? "0").ThenBy(obj => obj.AddNum2 ?? "0");
+        else
+            resultHouseQuery = resultHouseQuery.OrderBy(obj => obj.Name);
+
+        var resultHouseObjects = await resultHouseQuery.Take(50).Select(obj => obj.Object).ToListAsync();
 
         return resultAddressObjects.Concat(resultHouseObjects);
     }

@@ -44,7 +44,7 @@ public static class PostMapper
             HasLike = hasLike,
             CommentsCount = from.CommentCount,
             Tags = from.Tags.Select(TagMapper.GetTagDto).ToList(),
-            Comments = from.Comments.Select(CommentMapper.GetCommentDto).ToList()
+            Comments = from.Comments.OrderBy(comment => comment.CreationTime).Select(CommentMapper.GetCommentDto).ToList()
         };
 
     public static PostPagedListDto GetPostPagedListDto(int pageNumber, List<PostDto> posts, int pageCount)

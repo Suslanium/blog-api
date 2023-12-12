@@ -90,7 +90,7 @@ public class CommunityController(ICommunityService communityService) : Controlle
     }
 
     [HttpGet("{id}/role")]
-    public async Task<ActionResult<CommunityRole>> GetUserRole(Guid id)
+    public async Task<ActionResult<CommunityRole?>> GetUserRole(Guid id)
     {
         var role = await communityService.GetUserRole((Guid)UserId!, id);
         return Ok(role);

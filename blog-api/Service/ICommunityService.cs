@@ -28,5 +28,5 @@ public interface ICommunityService
 
     public Task EditCommunity(Guid editorId, Guid communityId, CommunityCreateEditDto editDto);
 
-    public Task<CommunityRole> GetUserRole(Guid userGuid, Guid communityGuid);
+    public Task<CommunityRole?> GetUserRole(Guid userGuid, Guid communityGuid);
 }

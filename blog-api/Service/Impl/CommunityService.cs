@@ -133,16 +133,14 @@ public class CommunityService(BlogDbContext dbContext, FiasDbContext fiasDbConte
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task<CommunityRole> GetUserRole(Guid userGuid, Guid communityGuid)
+    public async Task<CommunityRole?> GetUserRole(Guid userGuid, Guid communityGuid)
     {
         if (await dbContext.Communities.FindAsync(communityGuid) == null)
             throw new BlogApiArgumentException("Community with specified id does not exist");
 
         var userSubscription = await dbContext.Subscriptions.FindAsync(communityGuid, userGuid);
-        if (userSubscription == null)
-            throw new BlogApiArgumentException("User is not subscribed to specified community");
 
-        return userSubscription.CommunityRole;
+        return userSubscription?.CommunityRole;
     }
 
     public async Task AddAdministrator(Guid callerGuid, Guid userGuid, Guid communityGuid)

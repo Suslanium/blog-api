@@ -106,11 +106,8 @@ app.UseHttpsRedirection();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
-    var fiasDb = scope.ServiceProvider.GetRequiredService<FiasDbContext>();
     if (db.Database.GetPendingMigrations().Any())
         db.Database.Migrate();
-    if (fiasDb.Database.GetPendingMigrations().Any())
-        fiasDb.Database.Migrate();
 }
 
 app.Run();

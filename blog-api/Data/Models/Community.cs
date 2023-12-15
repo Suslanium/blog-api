@@ -1,22 +1,3 @@
-﻿namespace blog_api.Data.Models;
-
-public class Community
-{
-    public Guid Id { get; set; }
-    
-    public required string Name { get; set; }
-    
-    public required string Description { get; set; }
-    
-    public required bool IsClosed { get; set; }
-    
-    public required DateTime CreationTime { get; set; }
-
-    public int SubscribersCount { get; set; }
-    
-    public List<User> Subscribers { get; } = new();
-
-    public List<Subscription> Subscriptions { get; } = new();
-
-    public List<Post> Posts { get; } = new();
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:fe6a53e4e8fbdb6b75582763aa4fefba2b228e9705930fc1ef43fd67c6a98104
+size 532

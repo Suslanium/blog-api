@@ -1,20 +1,3 @@
-﻿using blog_api.Data.Models;
-
-namespace blog_api.Model;
-
-public class CommunityUserDto
-{
-    public required Guid Id { get; set; }
-    
-    public required DateTime CreationTime { get; set; }
-    
-    public required string Name { get; set; }
-    
-    public required string Description { get; set; }
-    
-    public required bool IsClosed { get; set; }
-    
-    public required int SubscribersCount { get; set; }
-    
-    public required CommunityRole UserRole { get; set; }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:8243e12686d3453b78fb3938028083ae8ac0206e62f9cbf7788aaf8d38aa39e3
+size 479

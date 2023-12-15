@@ -1,35 +1,3 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
-#nullable disable
-
-namespace blog_api.Migrations
-{
-    /// <inheritdoc />
-    public partial class UserBirthDateChange : Migration
-    {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "BirthDate",
-                table: "Users",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateOnly),
-                oldType: "date");
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AlterColumn<DateOnly>(
-                name: "BirthDate",
-                table: "Users",
-                type: "date",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-        }
-    }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:9dbb83c7415f6f97d754181f35cfdd0a433e29d73e0cd2d3cc835050620c16e8
+size 1012

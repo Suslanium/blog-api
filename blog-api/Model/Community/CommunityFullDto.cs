@@ -1,18 +1,3 @@
-﻿namespace blog_api.Model;
-
-public class CommunityFullDto
-{
-    public required Guid Id { get; set; }
-    
-    public required DateTime CreationTime { get; set; }
-    
-    public required string Name { get; set; }
-    
-    public required string Description { get; set; }
-    
-    public required bool IsClosed { get; set; }
-    
-    public required int SubscribersCount { get; set; }
-    
-    public required List<UserDto> Administrators { get; set; }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:059691a69be450cbb2db5d7c58b102c2cd49f24910a7a65896a17ef79f84662e
+size 456

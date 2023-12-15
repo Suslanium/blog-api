@@ -1,19 +1,3 @@
-﻿using blog_api.Model;
-
-namespace blog_api.Service;
-
-public interface IPostService
-{
-    public Task<PostPagedListDto> GetPostList(Guid? userId, List<Guid>? tags, string? authorName, int? minReadingTime,
-        int? maxReadingTime, SortingOption? sorting, bool onlyUserCommunities, int pageNumber, int pageSize);
-
-    public Task<PostFullDto> GetPostInfo(Guid? userId, Guid postId);
-    
-    public Task CreateUserPost(Guid userId, PostCreateEditDto createDto);
-
-    public Task EditPost(Guid userId, Guid postId, PostCreateEditDto editDto);
-
-    public Task LikePost(Guid userId, Guid postId);
-
-    public Task RemoveLike(Guid userId, Guid postId);
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:b5d0f2b16711df8b614cc0eca3e22d706b30bf9355c736f3acf576b691df3aaf
+size 654

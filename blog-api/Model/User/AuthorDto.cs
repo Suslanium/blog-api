@@ -1,18 +1,3 @@
-﻿using blog_api.Data.Models;
-
-namespace blog_api.Model;
-
-public class AuthorDto
-{
-    public required string FullName { get; set; }
-    
-    public DateTime? BirthDate { get; set; }
-    
-    public required Gender Gender { get; set; }
-    
-    public required int Posts { get; set; }
-    
-    public required int Likes { get; set; }
-
-    public required DateTime CreationTime { get; set; }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:7ce5344d201fcd9624549078f34ef2162c9e1d27ea4ea8dfffb81070ec4dc174
+size 393

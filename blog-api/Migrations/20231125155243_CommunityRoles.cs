@@ -1,29 +1,3 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
-
-#nullable disable
-
-namespace blog_api.Migrations
-{
-    /// <inheritdoc />
-    public partial class CommunityRoles : Migration
-    {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<int>(
-                name: "CommunityRole",
-                table: "Subscriptions",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "CommunityRole",
-                table: "Subscriptions");
-        }
-    }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:436fde2fac34875408100bf8bccc7eda914bfd763eac6086ccd1c962eb737417
+size 774

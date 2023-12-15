@@ -1,20 +1,3 @@
-﻿using blog_api.Data.Models;
-
-namespace blog_api.Model.Mapper;
-
-public static class CommentMapper
-{
-    public static CommentDto GetCommentDto(Comment from)
-        => new CommentDto
-        {
-            Id = from.Id,
-            AuthorId = from.AuthorId,
-            AuthorName = from.Author.FullName,
-            Content = from.Content,
-            CreationTime = from.CreationTime,
-            DeleteTime = from.DeletedTime,
-            ModifiedTime = from.ModifiedTime,
-            ParentCommentId = from.ParentCommentId,
-            SubCommentsCount = from.SubCommentCount
-        };
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:e6dd69d288092ecf4d192f2c9305104e2261608a1460c2f9e6fc3fd173b7af71
+size 593

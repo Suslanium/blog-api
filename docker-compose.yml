@@ -1,0 +1,46 @@
+﻿version: "3.8"
+
+services:
+  app:
+    image: blog-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:80:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Port=5432;Database=blog_db;Username=postgres;Password=postgres;
+      - ConnectionStrings__FiasConnection=Server=db;Port=5432;Database=fias;Username=postgres;Password=postgres;
+    restart: unless-stopped
+    networks:
+      - blog_network
+
+  db:
+    image: postgres:latest
+    hostname: database_host
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=blog_db
+    expose:
+      - "5432"
+    volumes:
+      - ./gar_dump/gar_dump.sql:/docker-entrypoint-initdb.d/fias.sql
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 50
+    networks:
+      - blog_network
+      
+networks:
+  blog_network:
+    driver: bridge
+
+volumes: 
+  db_data:

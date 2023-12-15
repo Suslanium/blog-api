@@ -1,3 +1,13 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:38bb8aedd9083afd25b34d06d28e5b13d9803bccdab5dfa2a51d8b86fc94bba1
-size 291
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace blog_api.Model;
+
+public class CommunityCreateEditDto
+{
+    [MinLength(1)]
+    public required string Name { get; set; }
+    
+    public required string Description { get; set; }
+    
+    public required bool IsClosed { get; set; }
+}

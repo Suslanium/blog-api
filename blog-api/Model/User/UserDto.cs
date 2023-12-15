@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:008df10678d66f9cfde4b8129d91dc5731996f2757207a572399edc9aa737e1b
-size 522
+﻿using System.ComponentModel.DataAnnotations;
+using blog_api.Data.Models;
+
+namespace blog_api.Model;
+
+public class UserDto
+{
+    public required Guid Id { get; set; }
+    
+    public required DateTime CreationTime { get; set; }
+    
+    public required string FullName { get; set; }
+    
+    public DateTime? BirthDate { get; set; }
+    
+    public required Gender Gender { get; set; }
+    
+    [EmailAddress]
+    public required string Email { get; set; }
+    
+    [Phone]
+    public string? PhoneNumber { get; set; }
+}

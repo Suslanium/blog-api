@@ -1,3 +1,29 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:47145379dae99317ad2229d3fa6279cd32036097ef9d24cf9601c4dcf81856c0
-size 775
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace blog_api.Migrations
+{
+    /// <inheritdoc />
+    public partial class CommentAggregateAttr2 : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<int>(
+                name: "SubCommentCount",
+                table: "Comments",
+                type: "integer",
+                nullable: false,
+                defaultValue: 0);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "SubCommentCount",
+                table: "Comments");
+        }
+    }
+}

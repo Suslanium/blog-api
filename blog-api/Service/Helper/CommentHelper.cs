@@ -1,3 +1,16 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ce330379ba3b2b66198b1ce3388b74f4593ae54f40c9ba0dbc86ac3274b4dd9b
-size 587
+﻿using blog_api.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace blog_api.Service.Helper;
+
+public static class CommentHelper
+{
+    public static Task<bool> UserHasAccessToComments(this BlogDbContext dbContext, Guid postId, Guid userId)
+    {
+        return dbContext.Posts.Where(postEntity => postEntity.Id == postId)
+            .Select(postEntity =>
+                postEntity.Community == null || !postEntity.Community.IsClosed ||
+                postEntity.Community.Subscriptions.Any(subscription => subscription.UserId == userId))
+            .FirstOrDefaultAsync();
+    }
+}

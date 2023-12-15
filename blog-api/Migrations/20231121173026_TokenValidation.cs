@@ -1,3 +1,34 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6d73c687de6a54a88d8a041c0e2ff83d59ab2a8997691924d8b12ef509749b99
-size 1037
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace blog_api.Migrations
+{
+    /// <inheritdoc />
+    public partial class TokenValidation : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "TokenValidation",
+                columns: table => new
+                {
+                    UserEmail = table.Column<string>(type: "text", nullable: false),
+                    MinimalIssuedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TokenValidation", x => x.UserEmail);
+                });
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "TokenValidation");
+        }
+    }
+}

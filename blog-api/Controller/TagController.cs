@@ -1,3 +1,25 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ed91416a71e6e3d5168d43dfdbabd9882228b32f7e0fcedade1b94819a17c8de
-size 578
+﻿using blog_api.Model;
+using blog_api.Service;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace blog_api.Controller;
+
+[ApiController]
+[Route("api/tag")]
+public class TagController(ITagService tagService) : ControllerBase
+{
+    [HttpGet]
+    public async Task<List<TagDto>> GetTagList()
+    {
+        return await tagService.GetTagList();
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> CreateTag(TagCreationDto tagCreationDto)
+    {
+        await tagService.CreateTag(tagCreationDto);
+        return Ok();
+    }
+}

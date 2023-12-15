@@ -1,3 +1,19 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3aeca1d8d7d035d46e06751f0abdb10761273d755f0e5032781f364e51b2529a
-size 565
+﻿using System.ComponentModel.DataAnnotations;
+using blog_api.Data.Models;
+
+namespace blog_api.Model;
+
+public class UserEditDto
+{
+    [MinLength(2)] public required string FullName { get; set; }
+
+    public required Gender Gender { get; set; }
+
+    public DateTime? BirthDate { get; set; }
+
+    [RegularExpression(@"^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$",
+        ErrorMessage = "Phone number must be in the format +7 (xxx) xxx-xx-xx, where x is a digit")]
+    public string? PhoneNumber { get; set; }
+
+    [EmailAddress] public required string Email { get; set; }
+}

@@ -1,3 +1,29 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:426d60fbbf5b889c32f4fc25a84405d5342cfdfe3263800df7537798f8a9d8e6
-size 754
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace blog_api.Migrations
+{
+    /// <inheritdoc />
+    public partial class PostEditedTime : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<DateTime>(
+                name: "EditedTime",
+                table: "Posts",
+                type: "timestamp with time zone",
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "EditedTime",
+                table: "Posts");
+        }
+    }
+}

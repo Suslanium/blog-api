@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:50588cabeaa116a524fd767603899bca5304957e33278ac3a763efa7028b7649
-size 540
+﻿namespace blog_api.Model;
+
+public class CommentDto
+{
+    public required Guid Id { get; set; }
+    
+    public Guid? ParentCommentId { get; set; }
+    
+    public required DateTime CreationTime { get; set; }
+    
+    public required string Content { get; set; }
+    
+    public DateTime? ModifiedTime { get; set; }
+    
+    public DateTime? DeleteTime { get; set; }
+    
+    public required Guid AuthorId { get; set; }
+    
+    public required string AuthorName { get; set; }
+    
+    public required int SubCommentsCount { get; set; }
+}

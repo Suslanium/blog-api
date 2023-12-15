@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6538d7fb713fb3527502f3e820cc80e48c8a3b292f5895b2bdfd756b21aa4a8f
-size 424
+﻿using blog_api.Model;
+
+namespace blog_api.Service;
+
+public interface ICommentService
+{
+    public Task<List<CommentDto>> GetCommentTree(Guid? userId, Guid rootCommentId);
+    
+    public Task AddComment(Guid userId, Guid postId, CommentCreateDto commentCreateDto);
+
+    public Task EditComment(Guid userId, Guid commentId, CommentUpdateDto commentUpdateDto);
+
+    public Task DeleteComment(Guid userId, Guid commentId);
+}

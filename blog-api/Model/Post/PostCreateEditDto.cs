@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:258edb8e3a3487a14c9a0bcc5e8071cce4bcef247a36742825920e42f4a4684c
-size 514
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace blog_api.Model;
+
+public class PostCreateEditDto
+{
+    [MinLength(5)]
+    public required string Title { get; set; }
+    
+    [MinLength(5)]
+    public required string Description { get; set; }
+    
+    [Range(0, int.MaxValue)]
+    public required int ReadingTime { get; set; }
+    
+    [Url]
+    public string? ImageUri { get; set; }
+    
+    public Guid? AddressId { get; set; }
+    
+    [MinLength(1)]
+    public required List<Guid> Tags { get; set; }
+}

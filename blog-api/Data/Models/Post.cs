@@ -1,3 +1,38 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6fd115d130577c2a2cebf4978f8e0ea277e5707bb97f549d58c93a99360d1ab1
-size 901
+﻿namespace blog_api.Data.Models;
+
+public class Post
+{
+    public Guid Id { get; set; }
+    
+    public required DateTime CreationTime { get; set; }
+    
+    public DateTime? EditedTime { get; set; }
+    
+    public required string Title { get; set; }
+    
+    public required string Description { get; set; }
+    
+    public required int ReadingTime { get; set; }
+    
+    public string? ImageUri { get; set; }
+    
+    public Guid? AddressId { get; set; }
+    
+    public required Guid AuthorId { get; set; }
+
+    public User Author { get; set; } = null!;
+    
+    public Guid? CommunityId { get; set; }
+
+    public Community? Community { get; set; }
+    
+    public List<Tag> Tags { get; } = new();
+    
+    public int LikeCount { get; set; }
+
+    public List<LikedPosts> Likes { get; } = new();
+    
+    public int CommentCount { get; set; }
+
+    public List<Comment> Comments { get; } = new();
+}

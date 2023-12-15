@@ -1,3 +1,21 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3ce2282642e5479b8282e7f08bcefb2dcd5349658715f9d2caf7d5fa8767ecff
-size 455
+﻿using blog_api.Data.Models;
+
+namespace blog_api.Model.Mapper;
+
+public static class TagMapper
+{
+    public static TagDto GetTagDto(Tag from)
+        => new TagDto
+        {
+            Id = from.Id,
+            CreationTime = from.CreationTime,
+            Name = from.Name
+        };
+
+    public static Tag GetNewTag(TagCreationDto from)
+        => new Tag
+        {
+            Name = from.Name,
+            CreationTime = DateTime.UtcNow
+        };
+}

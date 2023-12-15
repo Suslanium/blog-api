@@ -1,3 +1,16 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:a47ef563b6f32fa9d93a09e70920af62917670ee9a894e5009dc85749dbb81df
-size 384
+﻿namespace blog_api.Model;
+
+public class CommunityDto
+{
+    public required Guid Id { get; set; }
+    
+    public required DateTime CreationTime { get; set; }
+    
+    public required string Name { get; set; }
+    
+    public required string Description { get; set; }
+    
+    public required bool IsClosed { get; set; }
+    
+    public required int SubscribersCount { get; set; }
+}

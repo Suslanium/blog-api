@@ -1,3 +1,10 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0fc59e70d29b2ed00b6cd73cabe427c2683163ca8604d21c8e801be5ddc47e86
-size 295
+﻿namespace blog_api.Data.Models;
+
+public class Subscription
+{
+    public Guid UserId { get; set; }
+    public Guid CommunityId { get; set; }
+    public CommunityRole CommunityRole { get; set; }
+    public User User { get; set; } = null!;
+    public Community Community { get; set; } = null!;
+}
